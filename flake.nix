@@ -72,6 +72,7 @@
               ++ [
                 rust-toolchain
                 pkgs.clippy
+                pkgs.hyperfine
               ];
           };
 
