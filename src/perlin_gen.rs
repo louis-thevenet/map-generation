@@ -1,8 +1,10 @@
 use rand::{seq::SliceRandom, thread_rng};
 
+#[derive(Default)]
 pub struct PerlinNoiseGenerator {
     dimension: usize,
     permutations: Vec<usize>,
+    octaves: usize,
 }
 impl PerlinNoiseGenerator {
     pub fn new(dimension: usize) -> Self {
@@ -11,9 +13,12 @@ impl PerlinNoiseGenerator {
         Self {
             dimension,
             permutations,
+            ..Default::default()
         }
     }
-
+    pub fn add_octaves(self, octaves: usize) -> Self {
+        Self { octaves, ..self }
+    }
     fn constant_vector(h: usize) -> Vector2 {
         match h % 4 {
             0 => Vector2(1., 1.),
@@ -61,17 +66,24 @@ impl PerlinNoiseGenerator {
 
         Self::lerp(u, Self::lerp(v, d_bl, d_tl), Self::lerp(v, d_br, d_tr))
     }
-    pub fn fractal_brownian_motion(&self, pos: (f64, f64), num_octaves: usize) -> f64 {
+    fn fractal_brownian_motion(&self, pos: (f64, f64)) -> f64 {
         let mut result = 0.0;
         let mut amplitude = 1.0;
         let mut freq = 0.005;
-        for _ in 0..num_octaves {
+        for _ in 0..self.octaves {
             let n = amplitude * self.perlin((pos.0 * freq, pos.1 * freq));
             result += n;
             amplitude *= 0.5;
             freq *= 2.0;
         }
         result
+    }
+    pub fn noise(&self, pos: (f64, f64)) -> f64 {
+        if self.octaves == 0 {
+            self.perlin(pos)
+        } else {
+            self.fractal_brownian_motion(pos)
+        }
     }
 }
 struct Vector2(f64, f64);

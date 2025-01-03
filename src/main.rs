@@ -10,8 +10,8 @@ fn main() {
     const BLUE: Rgb<u8> = Rgb([0, 0, 255]);
     const WHITE: Rgb<u8> = Rgb([255, 255, 255]);
     const YELLOW: Rgb<u8> = Rgb([255, 255, 0]);
-    let dimension = 1024 * 8;
-    let perlin_gen = PerlinNoiseGenerator::new(dimension as usize);
+    let dimension = 1024 * 10;
+    let perlin_gen = PerlinNoiseGenerator::new(dimension as usize).add_octaves(1);
     let image_gen = NoiseToImage::new(dimension)
         .add_layer(Layer {
             treshold: 0.85,

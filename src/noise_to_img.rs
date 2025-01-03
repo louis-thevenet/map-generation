@@ -23,7 +23,7 @@ impl NoiseToImage {
         self.layers.push(layer);
         self
     }
-
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn create_image(
         mut self,
         noise_gen: &PerlinNoiseGenerator,
@@ -35,9 +35,10 @@ impl NoiseToImage {
         img.par_enumerate_pixels_mut().for_each(|(x, y, p)| {
             let pos = (f64::from(x), f64::from(y));
 
-            let noise = (noise_gen.fractal_brownian_motion(pos, 8) + 1.) / 2.;
+            let noise = (noise_gen.noise(pos) + 1.) / 2.;
 
-            let mut px = Rgb([0, 0, 0]);
+            let mut px = Rgb([(noise * 255.0) as u8; 3]);
+
             for layer in &self.layers {
                 if noise > layer.treshold {
                     px = layer.color;
