@@ -10,8 +10,11 @@ fn main() {
     const BLUE: Rgb<u8> = Rgb([0, 0, 255]);
     const WHITE: Rgb<u8> = Rgb([255, 255, 255]);
     const YELLOW: Rgb<u8> = Rgb([255, 255, 0]);
-    let dimension = 1024 * 10;
-    let perlin_gen = PerlinNoiseGenerator::new(dimension as usize).add_octaves(1);
+    let dimension = 1000;
+    let perlin_gen = PerlinNoiseGenerator::new(dimension as usize, Some(9_776_883_071_826_648_804))
+        .set_lacunarity(2.0)
+        .set_persistance(0.5)
+        .set_octaves(8);
     let image_gen = NoiseToImage::new(dimension)
         .add_layer(Layer {
             treshold: 0.85,
@@ -22,7 +25,7 @@ fn main() {
             color: GREEN,
         })
         .add_layer(Layer {
-            treshold: 0.48,
+            treshold: 0.45,
             color: YELLOW,
         })
         .add_layer(Layer {
@@ -30,5 +33,8 @@ fn main() {
             color: BLUE,
         });
 
-    let _ = image_gen.create_image(&perlin_gen).save("output.png");
+    let mut create_image = image_gen.create_image(40.0, &perlin_gen);
+    let px = create_image.get_pixel_mut(dimension / 2, dimension / 2);
+    *px = Rgb([255, 0, 0]);
+    let _ = create_image.save("output.png");
 }

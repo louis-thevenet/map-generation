@@ -1,4 +1,5 @@
-use rand::{seq::SliceRandom, thread_rng};
+use rand::{seq::SliceRandom, thread_rng, RngCore, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
 #[derive(Default, Debug)]
 pub struct PerlinNoiseGenerator {
@@ -9,9 +10,18 @@ pub struct PerlinNoiseGenerator {
     persistance: f64,
 }
 impl PerlinNoiseGenerator {
-    pub fn new(dimension: usize) -> Self {
-        let mut permutations: Vec<usize> = (0..=(dimension)).collect::<Vec<usize>>();
-        permutations.shuffle(&mut thread_rng());
+    pub fn new(dimension: usize, seed: Option<u64>) -> Self {
+        let mut permutations: Vec<usize> = (0..=dimension).collect::<Vec<usize>>();
+
+        let seed_value = if let Some(seed_value) = seed {
+            seed_value
+        } else {
+            let seed_value = thread_rng().next_u64();
+            println!("Seed: {seed_value}");
+            seed_value
+        };
+        let mut rng = ChaCha8Rng::seed_from_u64(seed_value);
+        permutations.shuffle(&mut rng);
         Self {
             dimension,
             permutations,
