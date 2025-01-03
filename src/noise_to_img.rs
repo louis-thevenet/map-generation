@@ -26,6 +26,7 @@ impl NoiseToImage {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn create_image(
         mut self,
+        scale: f64,
         noise_gen: &PerlinNoiseGenerator,
     ) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
         self.layers
@@ -33,14 +34,22 @@ impl NoiseToImage {
 
         let mut img = ImageBuffer::new(self.dimension, self.dimension);
         img.par_enumerate_pixels_mut().for_each(|(x, y, p)| {
-            let pos = (f64::from(x), f64::from(y));
+            let pos = (f64::from(x) / scale, f64::from(y) / scale);
 
             let noise = (noise_gen.noise(pos) + 1.) / 2.;
 
-            let mut px = Rgb([(noise * 255.0) as u8; 3]);
+            // default pixel color is either lowest layer or noise map if layers is empty
+            let mut px = self
+                .layers
+                .last()
+                .unwrap_or(&Layer {
+                    treshold: 0.0,
+                    color: Rgb([(noise * 255.0) as u8; 3]),
+                })
+                .color;
 
             for layer in &self.layers {
-                if noise > layer.treshold {
+                if noise >= layer.treshold {
                     px = layer.color;
                     break;
                 }

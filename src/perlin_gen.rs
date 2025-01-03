@@ -1,10 +1,12 @@
 use rand::{seq::SliceRandom, thread_rng};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PerlinNoiseGenerator {
     dimension: usize,
-    permutations: Vec<usize>,
+    lacunarity: f64,
     octaves: usize,
+    permutations: Vec<usize>,
+    persistance: f64,
 }
 impl PerlinNoiseGenerator {
     pub fn new(dimension: usize) -> Self {
@@ -16,7 +18,16 @@ impl PerlinNoiseGenerator {
             ..Default::default()
         }
     }
-    pub fn add_octaves(self, octaves: usize) -> Self {
+    pub fn set_lacunarity(self, lacunarity: f64) -> Self {
+        Self { lacunarity, ..self }
+    }
+    pub fn set_persistance(self, persistance: f64) -> Self {
+        Self {
+            persistance,
+            ..self
+        }
+    }
+    pub fn set_octaves(self, octaves: usize) -> Self {
         Self { octaves, ..self }
     }
     fn constant_vector(h: usize) -> Vector2 {
@@ -27,7 +38,7 @@ impl PerlinNoiseGenerator {
             _ => Vector2(1., -1.),
         }
     }
-    fn lerp(t: f64, a1: f64, a2: f64) -> f64 {
+    pub fn lerp(t: f64, a1: f64, a2: f64) -> f64 {
         a1 + t * (a2 - a1)
     }
 
@@ -68,13 +79,10 @@ impl PerlinNoiseGenerator {
     }
     fn fractal_brownian_motion(&self, pos: (f64, f64)) -> f64 {
         let mut result = 0.0;
-        let mut amplitude = 1.0;
-        let mut freq = 0.005;
-        for _ in 0..self.octaves {
-            let n = amplitude * self.perlin((pos.0 * freq, pos.1 * freq));
-            result += n;
-            amplitude *= 0.5;
-            freq *= 2.0;
+        for oct in 0..self.octaves {
+            let freq = self.lacunarity.powi(oct.try_into().unwrap());
+            let amplitude = self.persistance.powi(oct.try_into().unwrap());
+            result += amplitude * self.perlin((pos.0 * freq, pos.1 * freq));
         }
         result
     }
