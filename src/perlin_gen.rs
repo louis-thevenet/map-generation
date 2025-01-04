@@ -1,17 +1,20 @@
 use rand::{seq::SliceRandom, thread_rng, RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+const PERMUTATION_LENGTH: usize = 1024;
 
 #[derive(Default, Debug)]
 pub struct PerlinNoiseGenerator {
-    dimension: usize,
+    pub(crate) chunk_size: usize,
     lacunarity: f64,
     octaves: usize,
     permutations: Vec<usize>,
     persistance: f64,
+    scale: f64,
 }
 impl PerlinNoiseGenerator {
-    pub fn new(dimension: usize, seed: Option<u64>) -> Self {
-        let mut permutations: Vec<usize> = (0..=dimension).collect::<Vec<usize>>();
+    pub fn new(chunk_size: usize, seed: Option<u64>) -> Self {
+        let mut permutations: Vec<usize> = (0..=PERMUTATION_LENGTH).collect::<Vec<usize>>();
 
         let seed_value = if let Some(seed_value) = seed {
             seed_value
@@ -23,7 +26,7 @@ impl PerlinNoiseGenerator {
         let mut rng = ChaCha8Rng::seed_from_u64(seed_value);
         permutations.shuffle(&mut rng);
         Self {
-            dimension,
+            chunk_size,
             permutations,
             ..Default::default()
         }
@@ -36,6 +39,9 @@ impl PerlinNoiseGenerator {
             persistance,
             ..self
         }
+    }
+    pub(crate) fn set_scale(self, scale: f64) -> Self {
+        Self { scale, ..self }
     }
     pub fn set_octaves(self, octaves: usize) -> Self {
         Self { octaves, ..self }
@@ -71,7 +77,7 @@ impl PerlinNoiseGenerator {
         let br = Vector2(fx - 1.0, fy);
         let bl = Vector2(fx, fy);
 
-        let size = self.dimension;
+        let size = self.permutations.len();
         let v_tr = self.permutations[(self.permutations[(nx + 1) % size] + (ny + 1) % size) % size];
         let v_tl = self.permutations[(self.permutations[nx % size] + (ny + 1) % size) % size];
         let v_br = self.permutations[(self.permutations[(nx + 1) % size] + ny % size) % size];
@@ -92,7 +98,8 @@ impl PerlinNoiseGenerator {
         for oct in 0..self.octaves {
             let freq = self.lacunarity.powi(oct.try_into().unwrap());
             let amplitude = self.persistance.powi(oct.try_into().unwrap());
-            result += amplitude * self.perlin((pos.0 * freq, pos.1 * freq));
+            result +=
+                amplitude * self.perlin((pos.0 * freq / self.scale, pos.1 * freq / self.scale));
         }
         result
     }
@@ -102,6 +109,24 @@ impl PerlinNoiseGenerator {
         } else {
             self.fractal_brownian_motion(pos)
         }
+    }
+
+    /// Generates a chunk from its coordinates.
+    /// Chunk dimension are
+    /// (pos.0, pos.1)                 ...   (pos.0 + `chunk_size`, pos.1)
+    ///                                ...
+    /// (pos.0, pos.1 + `chunk_size`)  ...   (pos.0 + `chunk_size`, pos.1 `chunk_size`ze)
+    pub fn generate_chunk(&self, pos: (usize, usize)) -> Vec<Vec<f64>> {
+        let x = (pos.0 * self.chunk_size) as f64;
+        let y = (pos.1 * self.chunk_size) as f64;
+        let mut result = vec![vec![0.0; self.chunk_size]; self.chunk_size];
+
+        result.par_iter_mut().enumerate().for_each(|(y_offset, v)| {
+            v.par_iter_mut().enumerate().for_each(move |(x_offset, v)| {
+                *v = self.noise((x + x_offset as f64, y + y_offset as f64));
+            });
+        });
+        result
     }
 }
 struct Vector2(f64, f64);
