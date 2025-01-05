@@ -1,1 +1,1 @@
-pub mod perlin_gen;
+pub mod terrain_generator;

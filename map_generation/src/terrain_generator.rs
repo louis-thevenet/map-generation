@@ -5,17 +5,20 @@ use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelI
 /// Length of the permutation vector. We should't see repetition before >~20k pixels.
 const PERMUTATION_LENGTH: usize = 1024 * 16;
 
+/// So that 1.0 is a good scale.
+const DEFAULT_SCALE: f64 = 40.0;
+
 #[derive(Default, Debug)]
 /// Represents a perlin noise generator with its settings.
-pub struct PerlinNoiseGenerator {
-    pub(crate) chunk_size: usize,
+pub struct TerrainGenerator {
+    pub chunk_size: usize,
     lacunarity: f64,
     octaves: usize,
     permutations: Vec<usize>,
     persistance: f64,
     scale: f64,
 }
-impl PerlinNoiseGenerator {
+impl TerrainGenerator {
     #[must_use]
     /// Creates a new `PerlinNoiseGenerator` from a `chunk_size` and an optional `seed`
     pub fn new(chunk_size: usize, seed: Option<u64>) -> Self {
@@ -49,7 +52,10 @@ impl PerlinNoiseGenerator {
     }
     #[must_use]
     pub fn set_scale(self, scale: f64) -> Self {
-        Self { scale, ..self }
+        Self {
+            scale: scale * DEFAULT_SCALE,
+            ..self
+        }
     }
     #[must_use]
     pub fn set_octaves(self, octaves: usize) -> Self {

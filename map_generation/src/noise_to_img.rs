@@ -1,7 +1,8 @@
 use image::{ImageBuffer, Rgb};
 use rayon::iter::ParallelIterator;
+use terrain_generator::TerrainGenerator;
 
-use crate::perlin_gen::PerlinNoiseGenerator;
+use crate::terrain_generator;
 
 /// A color and a treshhold to color maps images based on noise.
 pub struct Layer {
@@ -83,7 +84,7 @@ impl NoiseToImage {
     pub fn create_image(
         &self,
         size: (u32, u32),
-        noise_gen: &PerlinNoiseGenerator,
+        noise_gen: &TerrainGenerator,
     ) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
         let mut img = ImageBuffer::new(size.0, size.1);
         img.par_enumerate_pixels_mut().for_each(|(x, y, p)| {
