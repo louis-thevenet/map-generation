@@ -27,7 +27,6 @@ impl NoiseToImage {
         height: u32,
         color: Rgb<u8>,
     ) {
-        const BLACK: Rgb<u8> = Rgb([0, 0, 0]);
         for x in 0..=width {
             *img.get_pixel_mut(pos.0 + x, pos.1) = color;
             *img.get_pixel_mut(pos.0 + x, pos.1 + height) = color;
@@ -37,12 +36,15 @@ impl NoiseToImage {
             *img.get_pixel_mut(pos.0 + width, pos.1 + y) = color;
         }
     }
+    #[must_use]
     pub fn add_layer(mut self, layer: Layer) -> Self {
         self.layers.push(layer);
         self.layers
             .sort_by(|l1, l2| l2.treshold.total_cmp(&l1.treshold));
         self
     }
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn vec_to_image(&self, data: &[Vec<f64>]) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
         let mut img = ImageBuffer::new(data[0].len() as u32, data.len() as u32);
         img.par_enumerate_pixels_mut().for_each(|(x, y, p)| {
@@ -69,6 +71,7 @@ impl NoiseToImage {
         img
     }
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    #[must_use]
     pub fn create_image(
         &self,
         size: (u32, u32),

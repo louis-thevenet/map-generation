@@ -1,2 +1,2 @@
-mod noise_to_img;
-mod perlin_gen;
+pub mod noise_to_img;
+pub mod perlin_gen;

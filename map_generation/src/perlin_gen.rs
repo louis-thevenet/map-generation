@@ -13,6 +13,7 @@ pub struct PerlinNoiseGenerator {
     scale: f64,
 }
 impl PerlinNoiseGenerator {
+    #[must_use]
     pub fn new(chunk_size: usize, seed: Option<u64>) -> Self {
         let mut permutations: Vec<usize> = (0..=PERMUTATION_LENGTH).collect::<Vec<usize>>();
 
@@ -31,18 +32,22 @@ impl PerlinNoiseGenerator {
             ..Default::default()
         }
     }
+    #[must_use]
     pub fn set_lacunarity(self, lacunarity: f64) -> Self {
         Self { lacunarity, ..self }
     }
+    #[must_use]
     pub fn set_persistance(self, persistance: f64) -> Self {
         Self {
             persistance,
             ..self
         }
     }
-    pub(crate) fn set_scale(self, scale: f64) -> Self {
+    #[must_use]
+    pub fn set_scale(self, scale: f64) -> Self {
         Self { scale, ..self }
     }
+    #[must_use]
     pub fn set_octaves(self, octaves: usize) -> Self {
         Self { octaves, ..self }
     }
@@ -54,6 +59,7 @@ impl PerlinNoiseGenerator {
             _ => Vector2(1., -1.),
         }
     }
+    #[must_use]
     pub fn lerp(t: f64, a1: f64, a2: f64) -> f64 {
         a1 + t * (a2 - a1)
     }
@@ -103,6 +109,7 @@ impl PerlinNoiseGenerator {
         }
         result
     }
+    #[must_use]
     pub fn noise(&self, pos: (f64, f64)) -> f64 {
         if self.octaves == 0 {
             self.perlin(pos)
@@ -116,6 +123,8 @@ impl PerlinNoiseGenerator {
     /// (pos.0, pos.1)                 ...   (pos.0 + `chunk_size`, pos.1)
     ///                                ...
     /// (pos.0, pos.1 + `chunk_size`)  ...   (pos.0 + `chunk_size`, pos.1 `chunk_size`ze)
+    #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn generate_chunk(&self, pos: (usize, usize)) -> Vec<Vec<f64>> {
         let x = (pos.0 * self.chunk_size) as f64;
         let y = (pos.1 * self.chunk_size) as f64;
