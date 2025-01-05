@@ -2,6 +2,10 @@ use rand::{seq::SliceRandom, thread_rng, RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 
+use crate::chunk::Chunk;
+
+use super::noise_to_map::NoiseToMap;
+
 /// Length of the permutation vector. We should't see repetition before >~20k pixels.
 const PERMUTATION_LENGTH: usize = 1024 * 16;
 
@@ -11,7 +15,8 @@ const DEFAULT_SCALE: f64 = 40.0;
 #[derive(Default, Debug)]
 /// Represents a perlin noise generator with its settings.
 pub struct TerrainGenerator {
-    pub chunk_size: usize,
+    noise_to_map: NoiseToMap,
+    chunk_size: usize,
     lacunarity: f64,
     octaves: usize,
     permutations: Vec<usize>,
@@ -60,6 +65,13 @@ impl TerrainGenerator {
     #[must_use]
     pub fn set_octaves(self, octaves: usize) -> Self {
         Self { octaves, ..self }
+    }
+    #[must_use]
+    pub fn set_noise_to_map(self, noise_to_map: NoiseToMap) -> Self {
+        Self {
+            noise_to_map,
+            ..self
+        }
     }
     fn constant_vector(h: usize) -> Vector2 {
         match h % 4 {
@@ -136,7 +148,7 @@ impl TerrainGenerator {
     /// (pos.0, pos.1 + `chunk_size`)  ...   (pos.0 + `chunk_size`, pos.1 `chunk_size`ze)
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
-    pub fn generate_chunk(&self, pos: (usize, usize)) -> Vec<Vec<f64>> {
+    pub fn generate_chunk(&self, pos: (usize, usize)) -> Chunk {
         let x = (pos.0 * self.chunk_size) as f64;
         let y = (pos.1 * self.chunk_size) as f64;
         let mut result = vec![vec![0.0; self.chunk_size]; self.chunk_size];
@@ -146,7 +158,7 @@ impl TerrainGenerator {
                 *v = self.noise((x + x_offset as f64, y + y_offset as f64));
             });
         });
-        result
+        self.noise_to_map.chunk_from_noise(result)
     }
 }
 struct Vector2(f64, f64);

@@ -1,8 +1,8 @@
 [workspace]
 
 members = [
+  "game",
   "game_core",
   "llm_backend",
-  "map_generation"
 ]
 

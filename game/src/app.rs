@@ -1,5 +1,7 @@
 use std::error;
 
+use game_core::map::Map;
+
 /// Application result type.
 #[allow(clippy::module_name_repetitions)]
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -9,8 +11,9 @@ pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 pub struct App {
     /// Is the application running?
     pub running: bool,
-    /// counter
+    /// Game map
     pub counter: u8,
+    pub map: Map,
 }
 
 impl Default for App {
@@ -18,6 +21,7 @@ impl Default for App {
         Self {
             running: true,
             counter: 0,
+            map: Map::default(),
         }
     }
 }
