@@ -1,9 +1,12 @@
 use rand::{seq::SliceRandom, thread_rng, RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
-const PERMUTATION_LENGTH: usize = 1024;
+
+/// Length of the permutation vector. We should't see repetition before >~20k pixels.
+const PERMUTATION_LENGTH: usize = 1024 * 16;
 
 #[derive(Default, Debug)]
+/// Represents a perlin noise generator with its settings.
 pub struct PerlinNoiseGenerator {
     pub(crate) chunk_size: usize,
     lacunarity: f64,
@@ -14,6 +17,7 @@ pub struct PerlinNoiseGenerator {
 }
 impl PerlinNoiseGenerator {
     #[must_use]
+    /// Creates a new `PerlinNoiseGenerator` from a `chunk_size` and an optional `seed`
     pub fn new(chunk_size: usize, seed: Option<u64>) -> Self {
         let mut permutations: Vec<usize> = (0..=PERMUTATION_LENGTH).collect::<Vec<usize>>();
 
@@ -110,6 +114,7 @@ impl PerlinNoiseGenerator {
         result
     }
     #[must_use]
+    /// Generate noise from coordinates.
     pub fn noise(&self, pos: (f64, f64)) -> f64 {
         if self.octaves == 0 {
             self.perlin(pos)

@@ -3,15 +3,18 @@ use rayon::iter::ParallelIterator;
 
 use crate::perlin_gen::PerlinNoiseGenerator;
 
+/// A color and a treshhold to color maps images based on noise.
 pub struct Layer {
     pub treshold: f64,
     pub color: Rgb<u8>,
 }
 #[derive(Default)]
+/// Settings for the image to create.
 pub struct NoiseToImage {
     layers: Vec<Layer>,
 }
 impl NoiseToImage {
+    /// Draws a grid on a image using cell length.
     pub fn draw_grid(img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, cell_size: u32) {
         const BLACK: Rgb<u8> = Rgb([0, 0, 0]);
         img.par_enumerate_pixels_mut().for_each(|(x, y, p)| {
@@ -20,6 +23,8 @@ impl NoiseToImage {
             }
         });
     }
+    /// Draws a rectangle on an image from a top-left pixel position and width and height.
+    /// Only the rectangle sides are colored.
     pub fn draw_rect(
         img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>,
         pos: (u32, u32),
@@ -37,6 +42,7 @@ impl NoiseToImage {
         }
     }
     #[must_use]
+    /// Adds a new layer to the `NoiseToImage`
     pub fn add_layer(mut self, layer: Layer) -> Self {
         self.layers.push(layer);
         self.layers
@@ -45,6 +51,7 @@ impl NoiseToImage {
     }
     #[must_use]
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    /// Converts a 2D noise vector (with values from -1.0 to 1.0) to an image.
     pub fn vec_to_image(&self, data: &[Vec<f64>]) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
         let mut img = ImageBuffer::new(data[0].len() as u32, data.len() as u32);
         img.par_enumerate_pixels_mut().for_each(|(x, y, p)| {
@@ -72,6 +79,7 @@ impl NoiseToImage {
     }
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     #[must_use]
+    /// Creates an image with specified `size` using the given `PerlinNoiseGenerator`.
     pub fn create_image(
         &self,
         size: (u32, u32),

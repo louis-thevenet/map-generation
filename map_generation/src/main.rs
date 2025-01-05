@@ -37,7 +37,7 @@ fn main() {
     let chunk_to_draw = (2, 4);
 
     // Draw chunks
-    let dimension = 8 * perlin_gen.chunk_size as u32;
+    let dimension = 64 * perlin_gen.chunk_size as u32;
     let mut chunks_img = image_gen.create_image((dimension, dimension), &perlin_gen);
     NoiseToImage::draw_grid(&mut chunks_img, perlin_gen.chunk_size as u32);
     NoiseToImage::draw_rect(
@@ -53,6 +53,6 @@ fn main() {
     let _ = chunks_img.save("output.png");
 
     // Draw one chunk
-    let mut single_chunk_img = image_gen.vec_to_image(&perlin_gen.generate_chunk(chunk_to_draw));
+    let single_chunk_img = image_gen.vec_to_image(&perlin_gen.generate_chunk(chunk_to_draw));
     let _ = single_chunk_img.save("chunk_0_0.png");
 }
