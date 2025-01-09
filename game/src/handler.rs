@@ -14,12 +14,17 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 app.quit();
             }
         }
-        // Counter handlers
+        KeyCode::Up => {
+            app.map_rendering.position.1 += 1;
+        }
+        KeyCode::Down => {
+            app.map_rendering.position.1 -= 1;
+        }
         KeyCode::Right => {
-            app.increment_counter();
+            app.map_rendering.position.0 += 1;
         }
         KeyCode::Left => {
-            app.decrement_counter();
+            app.map_rendering.position.0 -= 1;
         }
         // Other handlers you could add here.
         _ => {}

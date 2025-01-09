@@ -392,6 +392,7 @@ dependencies = [
  "futures",
  "game_core",
  "lazy_static",
+ "rand",
  "ratatui",
  "tokio",
  "tracing",

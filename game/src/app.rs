@@ -32,7 +32,7 @@ impl Default for App {
             map: Map::default(),
             map_rendering: MapRendering {
                 symbols,
-                position: (0, 0),
+                position: (1000, 1000),
             },
         }
     }

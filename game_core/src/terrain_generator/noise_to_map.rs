@@ -6,7 +6,7 @@ use crate::{
 #[derive(Default, Debug)]
 pub struct Layer {
     pub treshold: f64,
-    pub color: TileType,
+    pub tile_type: TileType,
 }
 #[derive(Default, Debug)]
 /// Settings for the image to create.
@@ -14,6 +14,14 @@ pub struct NoiseToMap {
     layers: Vec<Layer>,
 }
 impl NoiseToMap {
+    #[must_use]
+    /// Adds a new layer to the `NoiseToImage`
+    pub fn add_layer(mut self, layer: Layer) -> Self {
+        self.layers.push(layer);
+        self.layers
+            .sort_by(|l1, l2| l2.treshold.total_cmp(&l1.treshold));
+        self
+    }
     pub fn chunk_from_noise(&self, noise: Vec<Vec<f64>>) -> Chunk {
         let mut chunk = Chunk::default();
         chunk.tiles = vec![vec![]; noise.len()];
@@ -26,13 +34,13 @@ impl NoiseToMap {
                     .last()
                     .unwrap_or(&Layer {
                         treshold: 0.0,
-                        color: TileType::default(),
+                        tile_type: TileType::default(),
                     })
-                    .color;
+                    .tile_type;
 
                 for layer in &self.layers {
                     if noise >= layer.treshold {
-                        tile_type = layer.color;
+                        tile_type = layer.tile_type;
                         break;
                     }
                 }
