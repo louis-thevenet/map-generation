@@ -12,11 +12,13 @@ use crate::{
 pub mod app;
 pub mod event;
 pub mod handler;
+pub mod logging;
 pub mod tui;
 pub mod ui;
 
 #[tokio::main]
 async fn main() -> AppResult<()> {
+    crate::logging::init()?;
     // Create an application.
     let mut app = App::new();
 

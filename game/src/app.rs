@@ -1,6 +1,8 @@
-use std::error;
+use std::{collections::HashMap, error};
 
 use game_core::map::Map;
+
+use crate::ui::MapRendering;
 
 /// Application result type.
 #[allow(clippy::module_name_repetitions)]
@@ -11,17 +13,27 @@ pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 pub struct App {
     /// Is the application running?
     pub running: bool,
-    /// Game map
     pub counter: u8,
+    pub map_rendering: MapRendering,
     pub map: Map,
 }
 
 impl Default for App {
     fn default() -> Self {
+        let mut symbols = HashMap::new();
+        symbols.insert(game_core::tile::TileType::Water, "≈".into());
+        symbols.insert(game_core::tile::TileType::Beach, "B".into());
+        symbols.insert(game_core::tile::TileType::Land, "L".into());
+        symbols.insert(game_core::tile::TileType::Mountain, "M".into());
+
         Self {
             running: true,
             counter: 0,
             map: Map::default(),
+            map_rendering: MapRendering {
+                symbols,
+                position: (0, 0),
+            },
         }
     }
 }

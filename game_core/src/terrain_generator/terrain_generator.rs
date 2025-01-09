@@ -16,7 +16,7 @@ const DEFAULT_SCALE: f64 = 40.0;
 /// Represents a perlin noise generator with its settings.
 pub struct TerrainGenerator {
     noise_to_map: NoiseToMap,
-    chunk_size: usize,
+    pub chunk_size: usize,
     lacunarity: f64,
     octaves: usize,
     permutations: Vec<usize>,
@@ -148,9 +148,9 @@ impl TerrainGenerator {
     /// (pos.0, pos.1 + `chunk_size`)  ...   (pos.0 + `chunk_size`, pos.1 `chunk_size`ze)
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
-    pub fn generate_chunk(&self, pos: (usize, usize)) -> Chunk {
-        let x = (pos.0 * self.chunk_size) as f64;
-        let y = (pos.1 * self.chunk_size) as f64;
+    pub fn generate_chunk(&self, pos: (isize, isize)) -> Chunk {
+        let x = (pos.0 * self.chunk_size as isize) as f64;
+        let y = (pos.1 * self.chunk_size as isize) as f64;
         let mut result = vec![vec![0.0; self.chunk_size]; self.chunk_size];
 
         result.par_iter_mut().enumerate().for_each(|(y_offset, v)| {

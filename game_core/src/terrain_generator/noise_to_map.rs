@@ -16,6 +16,7 @@ pub struct NoiseToMap {
 impl NoiseToMap {
     pub fn chunk_from_noise(&self, noise: Vec<Vec<f64>>) -> Chunk {
         let mut chunk = Chunk::default();
+        chunk.tiles = vec![vec![]; noise.len()];
         for y in 0..noise.len() {
             for x in 0..noise[y].len() {
                 let noise = (noise[y][x] + 1.) / 2.;
@@ -35,7 +36,7 @@ impl NoiseToMap {
                         break;
                     }
                 }
-                chunk.tiles[y][x] = Tile { tile_type }
+                chunk.tiles[y].push(Tile { tile_type });
             }
         }
         chunk
