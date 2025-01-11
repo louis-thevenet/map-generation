@@ -1,3 +1,5 @@
+use strum::EnumCount;
+
 use crate::{
     chunk::Chunk,
     tile::{Tile, TileType},
@@ -24,9 +26,8 @@ impl NoiseToMap {
     }
     #[must_use]
     pub fn chunk_from_noise(&self, noise: &[Vec<f64>]) -> Chunk {
-        let mut chunk = Chunk {
-            tiles: vec![vec![]; noise.len()],
-        };
+        let mut tiles = vec![vec![]; noise.len()];
+        let mut freq = [0; TileType::COUNT];
         for y in 0..noise.len() {
             for x in 0..noise[y].len() {
                 let noise = (noise[y][x] + 1.) / 2.;
@@ -46,9 +47,21 @@ impl NoiseToMap {
                         break;
                     }
                 }
-                chunk.tiles[y].push(Tile { tile_type });
+                freq[tile_type as usize] += 1;
+                tiles[y].push(Tile { tile_type });
             }
         }
-        chunk
+        let average_tile = TileType::from_repr(
+            freq.iter()
+                .enumerate()
+                .max_by(|(_, value0), (_, value1)| value0.cmp(value1))
+                .map(|(idx, _)| idx)
+                .unwrap_or_default(),
+        )
+        .unwrap_or_default();
+        Chunk {
+            tiles,
+            average_tile,
+        }
     }
 }

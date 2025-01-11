@@ -1,21 +1,26 @@
 use std::{collections::HashMap, error};
 
-use game_core::map::Map;
+use game_core::{map::Map, tile::TileType};
 use ratatui::style::Style;
-
-use crate::ui::MapRendering;
 
 /// Application result type.
 #[allow(clippy::module_name_repetitions)]
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
+#[derive(Debug, Clone)]
+pub enum MapMode {
+    Local,
+    Global,
+}
 /// Application.
 #[derive(Debug)]
 pub struct App {
     /// Is the application running?
     pub running: bool,
     pub counter: u8,
-    pub map_rendering: MapRendering,
+    pub symbols: HashMap<TileType, (String, Style)>,
+    pub map_mode: MapMode,
+    pub position: (isize, isize),
     pub map: Map,
 }
 
@@ -28,11 +33,11 @@ impl Default for App {
         );
         symbols.insert(
             game_core::tile::TileType::Beach,
-            ("B".into(), Style::new().fg(ratatui::style::Color::Yellow)),
+            ("░".into(), Style::new().fg(ratatui::style::Color::Yellow)),
         );
         symbols.insert(
             game_core::tile::TileType::Land,
-            ("L".into(), Style::new().fg(ratatui::style::Color::Green)),
+            ("█".into(), Style::new().fg(ratatui::style::Color::Green)),
         );
         symbols.insert(
             game_core::tile::TileType::Mountain,
@@ -42,11 +47,10 @@ impl Default for App {
         Self {
             running: true,
             counter: 0,
-            map: Map::default(),
-            map_rendering: MapRendering {
-                symbols,
-                position: (1000, 1000),
-            },
+            map: Map::new(16.0),
+            symbols,
+            position: (8000, 8000),
+            map_mode: MapMode::Global,
         }
     }
 }

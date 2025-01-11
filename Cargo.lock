@@ -407,6 +407,8 @@ dependencies = [
  "rand",
  "rand_chacha",
  "rayon",
+ "strum",
+ "strum_macros",
  "tracing",
 ]
 

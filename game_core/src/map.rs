@@ -19,7 +19,7 @@ pub struct Map {
 impl Default for Map {
     fn default() -> Self {
         Self {
-            generator: TerrainGenerator::new(64, None)
+            generator: TerrainGenerator::new(16, None)
                 .set_lacunarity(2.0)
                 .set_persistance(0.5)
                 .set_octaves(8)
@@ -48,20 +48,42 @@ impl Default for Map {
     }
 }
 impl Map {
+    #[must_use]
+    pub fn new(scale: f64) -> Self {
+        let mut res = Self::default();
+        res.generator = res.generator.set_scale(scale);
+        res
+    }
     /// .
     ///
     /// # Panics
     ///
     /// Panics if .
-    pub fn get_chunk(&mut self, pos: (isize, isize)) -> Chunk {
+    pub fn get_chunk_from_chunk_coord(&mut self, pos: (isize, isize)) -> Chunk {
         // debug!("Getting chunk {pos:#?}");
         if let std::collections::hash_map::Entry::Vacant(e) = self.chunks.entry(pos) {
             // debug!("Generating chunk {pos:#?}");
             e.insert(self.generator.generate_chunk(pos));
 
-            self.get_chunk(pos)
+            self.get_chunk_from_chunk_coord(pos)
         } else {
             self.chunks.get(&pos).unwrap().clone()
+        }
+    }
+    pub fn get_chunk_from_world_coord(&mut self, position: (isize, isize)) -> Chunk {
+        let chunk_size = self.get_chunk_size() as isize;
+        let x_offset = position.0 / chunk_size;
+        let y_offset = position.1 / chunk_size;
+        // debug!("Getting chunk {pos:#?}");
+        if let std::collections::hash_map::Entry::Vacant(e) =
+            self.chunks.entry((x_offset, y_offset))
+        {
+            // debug!("Generating chunk {pos:#?}");
+            e.insert(self.generator.generate_chunk((x_offset, y_offset)));
+
+            self.get_chunk_from_chunk_coord((x_offset, y_offset))
+        } else {
+            self.chunks.get(&(x_offset, y_offset)).unwrap().clone()
         }
     }
 
@@ -86,6 +108,7 @@ impl Map {
         let y_offset = position.1 / chunk_size;
 
         debug!("Position {position:?}: Chunk {xc},{yc}, cell {x_offset},{y_offset}");
-        self.get_chunk((x_offset, y_offset)).tiles[yc as usize][xc as usize].clone()
+        self.get_chunk_from_chunk_coord((x_offset, y_offset)).tiles[yc as usize][xc as usize]
+            .clone()
     }
 }

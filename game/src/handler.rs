@@ -14,32 +14,50 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 app.quit();
             }
         }
+        KeyCode::Tab => {
+            app.map_mode = match app.map_mode {
+                crate::app::MapMode::Local => crate::app::MapMode::Global,
+                crate::app::MapMode::Global => crate::app::MapMode::Local,
+            }
+        }
         KeyCode::Up => {
-            app.map_rendering.position.1 += if key_event.modifiers == KeyModifiers::CONTROL {
+            app.position.1 += if key_event.modifiers == KeyModifiers::CONTROL {
                 CTRL_SPEED_MODIFIER
             } else {
                 1
+            } * match app.map_mode {
+                crate::app::MapMode::Local => 1,
+                crate::app::MapMode::Global => app.map.get_chunk_size() as isize,
             };
         }
         KeyCode::Down => {
-            app.map_rendering.position.1 -= if key_event.modifiers == KeyModifiers::CONTROL {
+            app.position.1 -= if key_event.modifiers == KeyModifiers::CONTROL {
                 CTRL_SPEED_MODIFIER
             } else {
                 1
+            } * match app.map_mode {
+                crate::app::MapMode::Local => 1,
+                crate::app::MapMode::Global => app.map.get_chunk_size() as isize,
             };
         }
         KeyCode::Right => {
-            app.map_rendering.position.0 += if key_event.modifiers == KeyModifiers::CONTROL {
+            app.position.0 += if key_event.modifiers == KeyModifiers::CONTROL {
                 CTRL_SPEED_MODIFIER
             } else {
                 1
+            } * match app.map_mode {
+                crate::app::MapMode::Local => 1,
+                crate::app::MapMode::Global => app.map.get_chunk_size() as isize,
             };
         }
         KeyCode::Left => {
-            app.map_rendering.position.0 -= if key_event.modifiers == KeyModifiers::CONTROL {
+            app.position.0 -= if key_event.modifiers == KeyModifiers::CONTROL {
                 CTRL_SPEED_MODIFIER
             } else {
                 1
+            } * match app.map_mode {
+                crate::app::MapMode::Local => 1,
+                crate::app::MapMode::Global => app.map.get_chunk_size() as isize,
             };
         }
         // Other handlers you could add here.
