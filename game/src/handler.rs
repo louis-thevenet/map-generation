@@ -1,6 +1,6 @@
 use crate::app::{App, AppResult};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-
+const CTRL_SPEED_MODIFIER: isize = 10;
 /// Handles the key events and updates the state of [`App`].
 pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
     match key_event.code {
@@ -15,16 +15,32 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
             }
         }
         KeyCode::Up => {
-            app.map_rendering.position.1 += 1;
+            app.map_rendering.position.1 += if key_event.modifiers == KeyModifiers::CONTROL {
+                CTRL_SPEED_MODIFIER
+            } else {
+                1
+            };
         }
         KeyCode::Down => {
-            app.map_rendering.position.1 -= 1;
+            app.map_rendering.position.1 -= if key_event.modifiers == KeyModifiers::CONTROL {
+                CTRL_SPEED_MODIFIER
+            } else {
+                1
+            };
         }
         KeyCode::Right => {
-            app.map_rendering.position.0 += 1;
+            app.map_rendering.position.0 += if key_event.modifiers == KeyModifiers::CONTROL {
+                CTRL_SPEED_MODIFIER
+            } else {
+                1
+            };
         }
         KeyCode::Left => {
-            app.map_rendering.position.0 -= 1;
+            app.map_rendering.position.0 -= if key_event.modifiers == KeyModifiers::CONTROL {
+                CTRL_SPEED_MODIFIER
+            } else {
+                1
+            };
         }
         // Other handlers you could add here.
         _ => {}

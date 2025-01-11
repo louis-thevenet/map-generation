@@ -2,13 +2,12 @@ use std::collections::HashMap;
 
 use crate::app::App;
 use game_core::{map::Map, tile::TileType};
-use rand::Rng;
 use ratatui::{
     layout::Position,
-    widgets::{Block, Clear, Paragraph, StatefulWidget, Widget},
+    style::Style,
+    widgets::{Clear, Paragraph, StatefulWidget, Widget},
     Frame,
 };
-use tracing::debug;
 
 /// Renders the user interface widgets.
 pub fn render(app: &mut App, frame: &mut Frame) {
@@ -21,7 +20,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 
 #[derive(Debug, Clone)]
 pub struct MapRendering {
-    pub symbols: HashMap<TileType, String>,
+    pub symbols: HashMap<TileType, (String, Style)>,
     pub position: (isize, isize),
 }
 impl StatefulWidget for MapRendering {
@@ -35,12 +34,12 @@ impl StatefulWidget for MapRendering {
         state: &mut Self::State,
     ) {
         Clear.render(area, buf);
-        debug!("Drawing map for position {:?}", self.position);
+        // debug!("Drawing map for position {:?}", self.position);
         for x in 0..area.width {
             for y in 0..area.height {
-                let x_map = self.position.0 + x as isize;
-                let y_map = self.position.1 - y as isize;
-                let symbol = self
+                let x_map = self.position.0 - area.width as isize / 2 + x as isize;
+                let y_map = self.position.1 + area.height as isize / 2 - y as isize;
+                let (symbol, style) = self
                     .symbols
                     .get(&state.get_tile((x_map, y_map)).tile_type)
                     .unwrap();
@@ -48,6 +47,7 @@ impl StatefulWidget for MapRendering {
                 let cell = buf.cell_mut(Position::new(x, y));
                 if let Some(c) = cell {
                     c.set_symbol(symbol);
+                    c.set_style(*style);
                 }
             }
         }

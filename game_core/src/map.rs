@@ -6,7 +6,7 @@ use crate::{
     chunk::Chunk,
     terrain_generator::{
         noise_to_map::{Layer, NoiseToMap},
-        terrain_generator::TerrainGenerator,
+        TerrainGenerator,
     },
     tile::{Tile, TileType},
 };
@@ -66,23 +66,26 @@ impl Map {
     }
 
     #[must_use]
-    pub fn get_chunk_size(&self) -> usize {
+    pub const fn get_chunk_size(&self) -> usize {
         self.generator.chunk_size
     }
 
     pub fn get_tile(&mut self, position: (isize, isize)) -> Tile {
         let chunk_size = self.get_chunk_size() as isize;
+        // Chunk coordinates
         let (xc, yc) = (position.0 % chunk_size, position.1 % chunk_size);
-        let mut x_offset = position.0 / chunk_size;
-        let mut y_offset = position.1 / chunk_size;
 
-        if position.0 < 0 {
-            x_offset = chunk_size - x_offset;
-        }
-        if position.1 < 0 {
-            y_offset = chunk_size - y_offset;
-        }
-        // debug!("Position {position:#?}: Chunk {xc},{yc}, cell {x_offset},{y_offset}");
-        self.get_chunk((xc, yc)).tiles[y_offset as usize][x_offset as usize].clone()
+        // if xc < 0 {
+        //     xc = (-xc) % chunk_size;
+        // }
+        // if yc < 0 {
+        //     yc = (-yc) % chunk_size;
+        // }
+
+        let x_offset = position.0 / chunk_size;
+        let y_offset = position.1 / chunk_size;
+
+        debug!("Position {position:?}: Chunk {xc},{yc}, cell {x_offset},{y_offset}");
+        self.get_chunk((x_offset, y_offset)).tiles[yc as usize][xc as usize].clone()
     }
 }

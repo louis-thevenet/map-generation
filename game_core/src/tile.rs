@@ -1,5 +1,4 @@
-use core::hash;
-use std::{hash::Hash, mem::discriminant};
+use std::hash::Hash;
 
 #[derive(Debug, Copy, Clone, Default, PartialEq, PartialOrd, Ord, Eq)]
 pub enum TileType {

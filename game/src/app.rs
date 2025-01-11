@@ -1,6 +1,7 @@
 use std::{collections::HashMap, error};
 
 use game_core::map::Map;
+use ratatui::style::Style;
 
 use crate::ui::MapRendering;
 
@@ -21,10 +22,22 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         let mut symbols = HashMap::new();
-        symbols.insert(game_core::tile::TileType::Water, "≈".into());
-        symbols.insert(game_core::tile::TileType::Beach, "B".into());
-        symbols.insert(game_core::tile::TileType::Land, "L".into());
-        symbols.insert(game_core::tile::TileType::Mountain, "M".into());
+        symbols.insert(
+            game_core::tile::TileType::Water,
+            ("≈".into(), Style::new().fg(ratatui::style::Color::Blue)),
+        );
+        symbols.insert(
+            game_core::tile::TileType::Beach,
+            ("B".into(), Style::new().fg(ratatui::style::Color::Yellow)),
+        );
+        symbols.insert(
+            game_core::tile::TileType::Land,
+            ("L".into(), Style::new().fg(ratatui::style::Color::Green)),
+        );
+        symbols.insert(
+            game_core::tile::TileType::Mountain,
+            ("M".into(), Style::new().fg(ratatui::style::Color::White)),
+        );
 
         Self {
             running: true,
@@ -46,7 +59,7 @@ impl App {
     }
 
     /// Handles the tick event of the terminal.
-    pub fn tick(&self) {}
+    pub const fn tick(&self) {}
 
     /// Set running to false to quit the application.
     pub fn quit(&mut self) {

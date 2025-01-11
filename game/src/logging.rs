@@ -22,7 +22,7 @@ lazy_static::lazy_static! {
 fn project_directory() -> Option<ProjectDirs> {
     ProjectDirs::from("com", "louis-thevenet", env!("CARGO_PKG_NAME"))
 }
-pub fn get_data_dir() -> PathBuf {
+#[must_use] pub fn get_data_dir() -> PathBuf {
     let directory = DATA_FOLDER.clone().map_or(
         {
             project_directory().map_or_else(

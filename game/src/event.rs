@@ -33,7 +33,7 @@ pub struct EventHandler {
 
 impl EventHandler {
     /// Constructs a new instance of [`EventHandler`].
-    pub fn new(tick_rate: u64) -> Self {
+    #[must_use] pub fn new(tick_rate: u64) -> Self {
         let tick_rate = Duration::from_millis(tick_rate);
         let (sender, receiver) = mpsc::unbounded_channel();
         let _sender = sender.clone();
@@ -44,7 +44,7 @@ impl EventHandler {
                 let tick_delay = tick.tick();
                 let crossterm_event = reader.next().fuse();
                 tokio::select! {
-                  _ = _sender.closed() => {
+                  () = _sender.closed() => {
                     break;
                   }
                   _ = tick_delay => {

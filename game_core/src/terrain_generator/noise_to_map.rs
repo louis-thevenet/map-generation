@@ -22,9 +22,11 @@ impl NoiseToMap {
             .sort_by(|l1, l2| l2.treshold.total_cmp(&l1.treshold));
         self
     }
-    pub fn chunk_from_noise(&self, noise: Vec<Vec<f64>>) -> Chunk {
-        let mut chunk = Chunk::default();
-        chunk.tiles = vec![vec![]; noise.len()];
+    #[must_use]
+    pub fn chunk_from_noise(&self, noise: &[Vec<f64>]) -> Chunk {
+        let mut chunk = Chunk {
+            tiles: vec![vec![]; noise.len()],
+        };
         for y in 0..noise.len() {
             for x in 0..noise[y].len() {
                 let noise = (noise[y][x] + 1.) / 2.;
