@@ -12,6 +12,8 @@ const PERMUTATION_LENGTH: usize = 1024 * 16;
 
 /// So that 1.0 is a good scale.
 const DEFAULT_SCALE: f64 = 40.0;
+/// Offset used to handle negative positions
+const POS_OFFSET: f64 = 1024.0;
 
 #[derive(Default, Debug)]
 /// Represents a perlin noise generator with its settings.
@@ -97,8 +99,8 @@ impl TerrainGenerator {
         clippy::similar_names
     )]
     fn perlin(&self, pos: (f64, f64)) -> f64 {
-        let (x, y) = pos;
-        let (nx, ny) = (pos.0 as usize, pos.1 as usize);
+        let (x, y) = (pos.0 + POS_OFFSET, pos.1 + POS_OFFSET);
+        let (nx, ny) = ((x - x.fract()) as usize, (y - y.fract()) as usize);
         let (fx, fy) = (x - x.floor(), y - y.floor());
 
         let tr = Vector2(fx - 1.0, fy - 1.0);
