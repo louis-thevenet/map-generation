@@ -4,6 +4,7 @@ use noise_to_map::NoiseToMap;
 use rand::{seq::SliceRandom, thread_rng, RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use tracing::debug;
 
 use crate::chunk::Chunk;
 
@@ -100,7 +101,7 @@ impl TerrainGenerator {
     )]
     fn perlin(&self, pos: (f64, f64)) -> f64 {
         let (x, y) = (pos.0 + POS_OFFSET, pos.1 + POS_OFFSET);
-        let (nx, ny) = ((x - x.fract()) as usize, (y - y.fract()) as usize);
+        let (nx, ny) = ((x.floor()) as usize, (y.floor()) as usize);
         let (fx, fy) = (x - x.floor(), y - y.floor());
 
         let tr = Vector2(fx - 1.0, fy - 1.0);

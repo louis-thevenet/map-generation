@@ -5,6 +5,7 @@ use ratatui::{
     widgets::{Clear, Paragraph, Widget},
     Frame,
 };
+use tracing::debug;
 
 /// Renders the user interface widgets.
 #[allow(clippy::cast_possible_wrap)]
@@ -29,9 +30,9 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                     &app.map.get_tile((x_map, y_map)).tile_type
                 }
                 MapMode::Global => {
-                    let x_map = app.position.0 / app.map.get_chunk_size() as isize
-                        - area.width as isize / 2
-                        + x as isize;
+                    let x_map = app.position.0 / app.map.get_chunk_size() as isize // Get chunk x coordinate
+                        - area.width as isize / 2 // Offset to center app.position
+                        + x as isize; // Add offset for current cell
                     let y_map = app.position.1 / app.map.get_chunk_size() as isize
                         + area.height as isize / 2
                         - y as isize;
@@ -59,8 +60,8 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         app.map_mode,
         app.position.0,
         app.position.1,
-        app.position.0 / app.map.get_chunk_size() as isize,
-        app.position.1 / app.map.get_chunk_size() as isize,
+        app.map.chunk_coord_from_world_coord(app.position).0,
+        app.map.chunk_coord_from_world_coord(app.position).1
     ))
     .render(area, buf);
 }

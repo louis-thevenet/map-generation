@@ -31,7 +31,7 @@ impl Default for App {
             running: true,
             map: Map::new(16.0),
             symbols: default_tile_ascii_mapping(),
-            position: (8000, 8000),
+            position: (0, 0),
             map_mode: MapMode::Global,
         }
     }
