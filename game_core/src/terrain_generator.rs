@@ -4,7 +4,6 @@ use noise_to_map::NoiseToMap;
 use rand::{seq::SliceRandom, thread_rng, RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
-use tracing::debug;
 
 use crate::chunk::Chunk;
 

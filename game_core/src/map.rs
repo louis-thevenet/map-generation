@@ -72,16 +72,17 @@ impl Map {
     }
 
     #[must_use]
-    pub const fn get_chunk_size(&self) -> usize {
-        self.generator.chunk_size
+    pub fn get_chunk_size(&self) -> isize {
+        // It's always used as an isize in computations
+        self.generator.chunk_size.try_into().unwrap_or({
+            error!("Chunk size too big to cast as a isize.");
+            0
+        })
     }
 
     pub fn get_tile(&mut self, position: (isize, isize)) -> Tile {
         // Chunk coordinates
-        let chunk_size = self.get_chunk_size().try_into().unwrap_or({
-            error!("Chunk size too big to cast as a isize.");
-            0
-        });
+        let chunk_size = self.get_chunk_size();
         let (chunk_x, chunk_y) = self.chunk_coord_from_world_coord(position);
 
         let cell_x = {
@@ -99,10 +100,7 @@ impl Map {
     }
     #[must_use]
     pub fn chunk_coord_from_world_coord(&self, position: (isize, isize)) -> (isize, isize) {
-        let chunk_size = self.get_chunk_size().try_into().unwrap_or({
-            error!("Chunk size too big to cast as a isize.");
-            0
-        });
+        let chunk_size = self.get_chunk_size();
         let x = if position.0 >= 0 {
             position.0 / chunk_size
         } else {

@@ -27,7 +27,7 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 1
             } * match app.map_mode {
                 crate::app::MapMode::Local => 1,
-                crate::app::MapMode::Global => app.map.get_chunk_size() as isize,
+                crate::app::MapMode::Global => app.map.get_chunk_size(),
             };
         }
         KeyCode::Down => {
@@ -37,7 +37,7 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 1
             } * match app.map_mode {
                 crate::app::MapMode::Local => 1,
-                crate::app::MapMode::Global => app.map.get_chunk_size() as isize,
+                crate::app::MapMode::Global => app.map.get_chunk_size(),
             };
         }
         KeyCode::Right => {
@@ -47,7 +47,7 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 1
             } * match app.map_mode {
                 crate::app::MapMode::Local => 1,
-                crate::app::MapMode::Global => app.map.get_chunk_size() as isize,
+                crate::app::MapMode::Global => app.map.get_chunk_size(),
             };
         }
         KeyCode::Left => {
@@ -57,7 +57,7 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 1
             } * match app.map_mode {
                 crate::app::MapMode::Local => 1,
-                crate::app::MapMode::Global => app.map.get_chunk_size() as isize,
+                crate::app::MapMode::Global => app.map.get_chunk_size(),
             };
         }
         // Other handlers you could add here.
