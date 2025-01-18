@@ -17,7 +17,6 @@ pub enum MapMode {
 pub struct App {
     /// Is the application running?
     pub running: bool,
-    pub counter: u8,
     pub symbols: HashMap<TileType, (String, Style)>,
     pub map_mode: MapMode,
     pub position: (isize, isize),
@@ -46,7 +45,6 @@ impl Default for App {
 
         Self {
             running: true,
-            counter: 0,
             map: Map::new(16.0),
             symbols,
             position: (8000, 8000),
@@ -68,17 +66,5 @@ impl App {
     /// Set running to false to quit the application.
     pub fn quit(&mut self) {
         self.running = false;
-    }
-
-    pub fn increment_counter(&mut self) {
-        if let Some(res) = self.counter.checked_add(1) {
-            self.counter = res;
-        }
-    }
-
-    pub fn decrement_counter(&mut self) {
-        if let Some(res) = self.counter.checked_sub(1) {
-            self.counter = res;
-        }
     }
 }
