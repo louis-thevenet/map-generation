@@ -3,6 +3,8 @@ use std::{collections::HashMap, error};
 use game_core::{map::Map, tile::TileType};
 use ratatui::style::Style;
 
+use crate::tile_to_tascii::default_tile_ascii_mapping;
+
 /// Application result type.
 #[allow(clippy::module_name_repetitions)]
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -25,28 +27,10 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
-        let mut symbols = HashMap::new();
-        symbols.insert(
-            game_core::tile::TileType::Water,
-            ("≈".into(), Style::new().fg(ratatui::style::Color::Blue)),
-        );
-        symbols.insert(
-            game_core::tile::TileType::Beach,
-            ("░".into(), Style::new().fg(ratatui::style::Color::Yellow)),
-        );
-        symbols.insert(
-            game_core::tile::TileType::Land,
-            ("█".into(), Style::new().fg(ratatui::style::Color::Green)),
-        );
-        symbols.insert(
-            game_core::tile::TileType::Mountain,
-            ("M".into(), Style::new().fg(ratatui::style::Color::White)),
-        );
-
         Self {
             running: true,
             map: Map::new(16.0),
-            symbols,
+            symbols: default_tile_ascii_mapping(),
             position: (8000, 8000),
             map_mode: MapMode::Global,
         }

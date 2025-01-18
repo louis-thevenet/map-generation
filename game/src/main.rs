@@ -13,6 +13,7 @@ pub mod app;
 pub mod event;
 pub mod handler;
 pub mod logging;
+pub mod tile_to_tascii;
 pub mod tui;
 pub mod ui;
 
