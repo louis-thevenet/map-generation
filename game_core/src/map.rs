@@ -1,6 +1,6 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::HashMap;
 
-use tracing::debug;
+use tracing::error;
 
 use crate::{
     chunk::Chunk,
@@ -54,32 +54,21 @@ impl Map {
         res.generator = res.generator.set_scale(scale);
         res
     }
-    /// .
+    /// Get a reference to a `Chunk` from its coordinates.
     ///
     /// # Panics
     ///
-    /// Panics if .
-    pub fn get_chunk_from_chunk_coord(&mut self, pos: (isize, isize)) -> Chunk {
-        // debug!("Getting chunk {pos:#?}");
-        if let Entry::Vacant(e) = self.chunks.entry(pos) {
-            // debug!("Generating chunk {pos:#?}");
+    /// Shouldn't panic but clippy is screaming at me.
+    pub fn get_chunk_from_chunk_coord(&mut self, pos: (isize, isize)) -> &Chunk {
+        if let std::collections::hash_map::Entry::Vacant(e) = self.chunks.entry(pos) {
             e.insert(self.generator.generate_chunk(pos));
-        }
-        self.chunks.get(&pos).unwrap().clone()
-    }
-    pub fn get_chunk_from_world_coord(&mut self, position: (isize, isize)) -> Chunk {
-        let chunk_size = self.get_chunk_size() as isize;
-        let x_offset = position.0 / chunk_size;
-        let y_offset = position.1 / chunk_size;
-        if let std::collections::hash_map::Entry::Vacant(e) =
-            self.chunks.entry((x_offset, y_offset))
-        {
-            e.insert(self.generator.generate_chunk((x_offset, y_offset)));
-
-            self.get_chunk_from_chunk_coord((x_offset, y_offset))
+            self.get_chunk_from_chunk_coord(pos)
         } else {
-            self.chunks.get(&(x_offset, y_offset)).unwrap().clone()
+            self.chunks.get(&pos).unwrap()
         }
+    }
+    pub fn get_chunk_from_world_coord(&mut self, position: (isize, isize)) -> &Chunk {
+        self.get_chunk_from_chunk_coord(self.chunk_coord_from_world_coord(position))
     }
 
     #[must_use]
@@ -89,7 +78,10 @@ impl Map {
 
     pub fn get_tile(&mut self, position: (isize, isize)) -> Tile {
         // Chunk coordinates
-        let chunk_size = self.get_chunk_size() as isize;
+        let chunk_size = self.get_chunk_size().try_into().unwrap_or({
+            error!("Chunk size too big to cast as a isize.");
+            0
+        });
         let (chunk_x, chunk_y) = self.chunk_coord_from_world_coord(position);
 
         let cell_x = {
@@ -107,7 +99,10 @@ impl Map {
     }
     #[must_use]
     pub fn chunk_coord_from_world_coord(&self, position: (isize, isize)) -> (isize, isize) {
-        let chunk_size = self.get_chunk_size() as isize;
+        let chunk_size = self.get_chunk_size().try_into().unwrap_or({
+            error!("Chunk size too big to cast as a isize.");
+            0
+        });
         let x = if position.0 >= 0 {
             position.0 / chunk_size
         } else {
