@@ -11,9 +11,10 @@ use crate::{
 
 pub mod app;
 pub mod event;
+pub mod fps_counter;
 pub mod handler;
 pub mod logging;
-pub mod tile_to_tascii;
+pub mod tile_to_ascii;
 pub mod tui;
 pub mod ui;
 
