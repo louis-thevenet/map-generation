@@ -64,12 +64,13 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         }
     }
     Paragraph::new(format!(
-        "{:?}\nWorld position: {}, {}\nChunk pos: {}, {}",
+        "{:?}\nWorld position: {}, {}\nChunk pos: {}, {}\nGenerated Chunks: {}",
         app.map_mode,
         app.position.0,
         app.position.1,
         app.map.chunk_coord_from_world_coord(app.position).0,
-        app.map.chunk_coord_from_world_coord(app.position).1
+        app.map.chunk_coord_from_world_coord(app.position).1,
+        app.map.generated_chunk_count()
     ))
     .render(area, buf);
 }
