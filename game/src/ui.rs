@@ -1,24 +1,60 @@
-use crate::app::{App, MapMode};
+use crate::{
+    app::{App, MapMode},
+    tile_to_ascii::tile_to_ascii,
+};
 use ratatui::{
-    layout::Position,
+    buffer::Buffer,
+    layout::{Constraint, Layout, Position, Rect},
     style::Style,
-    widgets::{Clear, Paragraph, Widget},
+    widgets::{Block, Clear, Paragraph, Widget},
     Frame,
 };
-use tracing::error;
 
 /// Renders the user interface widgets.
-#[allow(clippy::cast_possible_wrap)]
 pub fn render(app: &mut App, frame: &mut Frame) {
     let area = frame.area();
-    let buf = frame.buffer_mut();
+
+    let [info, _] = Layout::horizontal(Constraint::from_percentages([15, 100 - 15])).areas(area);
+    let [fps, info] = Layout::vertical(Constraint::from_lengths([1 + 2, 4 + 2])).areas(info);
+    draw_map(app, frame.buffer_mut(), area);
+
+    let _ = app.fps_counter.render_tick();
+
+    Clear.render(info, frame.buffer_mut());
+    Clear.render(fps, frame.buffer_mut());
+
+    app.fps_counter
+        .to_paragraph()
+        .style(Style::reset())
+        .block(Block::bordered())
+        .render(fps, frame.buffer_mut());
+
+    Paragraph::new(vec![
+        format!("{:?}", app.map_mode).into(),
+        format!("position: {}, {}", app.position.0, app.position.1,).into(),
+        format!(
+            "Chunk pos: {}, {}",
+            app.map.chunk_coord_from_world_coord(app.position).0,
+            app.map.chunk_coord_from_world_coord(app.position).1,
+        )
+        .into(),
+        format!("Generated Chunks: {}", app.map.generated_chunk_count()).into(),
+    ])
+    .left_aligned()
+    .style(Style::reset())
+    .block(Block::bordered())
+    .render(info, frame.buffer_mut());
+}
+
+#[allow(clippy::cast_possible_wrap)]
+fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
     Clear.render(area, buf);
 
     let half_width = area.width as isize / 2;
     let half_height = area.height as isize / 2;
 
-    for x in 0..area.width as isize {
-        for y in 0..area.height as isize {
+    for x in area.x as isize..area.width as isize {
+        for y in area.y as isize..area.height as isize {
             let tile_type = match app.map_mode {
                 // Take current map position
                 // Center it on the screen
@@ -39,18 +75,9 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                 }
             };
             let (symbol, style) = if x == half_width && y == half_height {
-                &("☺".into(), Style::new().fg(ratatui::style::Color::Red))
+                ("☺".into(), Style::new().fg(ratatui::style::Color::Red))
             } else {
-                match app.symbols.get(tile_type) {
-                    Some(s) => s,
-                    None => &{
-                        error!("Tile symbol not found");
-                        (
-                            String::from("X"),
-                            Style::new().fg(ratatui::style::Color::Red),
-                        )
-                    },
-                }
+                tile_to_ascii(tile_type)
             };
 
             let cell = buf.cell_mut(Position::new(
@@ -58,19 +85,9 @@ pub fn render(app: &mut App, frame: &mut Frame) {
                 y.try_into().unwrap_or_default(),
             ));
             if let Some(c) = cell {
-                c.set_symbol(symbol);
-                c.set_style(*style);
+                c.set_symbol(&symbol);
+                c.set_style(style);
             }
         }
     }
-    Paragraph::new(format!(
-        "{:?}\nWorld position: {}, {}\nChunk pos: {}, {}\nGenerated Chunks: {}",
-        app.map_mode,
-        app.position.0,
-        app.position.1,
-        app.map.chunk_coord_from_world_coord(app.position).0,
-        app.map.chunk_coord_from_world_coord(app.position).1,
-        app.map.generated_chunk_count()
-    ))
-    .render(area, buf);
 }

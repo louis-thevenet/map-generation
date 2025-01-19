@@ -1,9 +1,8 @@
-use std::{collections::HashMap, error};
+use std::error;
 
-use game_core::{map::Map, tile::TileType};
-use ratatui::style::Style;
+use game_core::map::Map;
 
-use crate::tile_to_tascii::default_tile_ascii_mapping;
+use crate::fps_counter::FpsCounter;
 
 /// Application result type.
 #[allow(clippy::module_name_repetitions)]
@@ -19,10 +18,10 @@ pub enum MapMode {
 pub struct App {
     /// Is the application running?
     pub running: bool,
-    pub symbols: HashMap<TileType, (String, Style)>,
     pub map_mode: MapMode,
     pub position: (isize, isize),
     pub map: Map,
+    pub fps_counter: FpsCounter,
 }
 
 impl Default for App {
@@ -30,9 +29,9 @@ impl Default for App {
         Self {
             running: true,
             map: Map::new(16.0),
-            symbols: default_tile_ascii_mapping(),
             position: (0, 0),
             map_mode: MapMode::Global,
+            fps_counter: FpsCounter::new(),
         }
     }
 }
@@ -45,7 +44,9 @@ impl App {
     }
 
     /// Handles the tick event of the terminal.
-    pub const fn tick(&self) {}
+    pub fn tick(&mut self) {
+        let _ = self.fps_counter.app_tick();
+    }
 
     /// Set running to false to quit the application.
     pub fn quit(&mut self) {
