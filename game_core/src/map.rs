@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use tracing::error;
+use tracing::{debug, error};
 
 use crate::{
     chunk::Chunk,
@@ -70,16 +70,35 @@ impl Map {
     pub fn get_chunk_from_world_coord(&mut self, position: (isize, isize)) -> &Chunk {
         self.get_chunk_from_chunk_coord(self.chunk_coord_from_world_coord(position))
     }
-
+    #[must_use]
+    pub fn is_generated(&self, pos: (isize, isize)) -> bool {
+        self.chunks.contains_key(&pos)
+    }
     #[must_use]
     pub fn get_chunk_size(&self) -> isize {
         // It's always used as an isize in computations
-        self.generator.chunk_size.try_into().unwrap_or({
-            error!("Chunk size too big to cast as a isize.");
-            0
-        })
+        self.generator.chunk_size as isize
     }
-
+    pub fn preload_radius(&mut self, position: (isize, isize), preload_chunks_radius: isize) {
+        for y in (-preload_chunks_radius)..=(preload_chunks_radius) {
+            for x in (-preload_chunks_radius)..=(preload_chunks_radius) {
+                if (x - position.0) * (x - position.0) + (y - position.1) * (y - position.1)
+                    > preload_chunks_radius * preload_chunks_radius
+                {
+                    continue;
+                }
+                let x = x + position.0 * self.get_chunk_size();
+                let y = y + position.1 * self.get_chunk_size();
+                if !self.is_generated((x, y)) {
+                    self.get_chunk_from_chunk_coord((x, y));
+                }
+            }
+        }
+    }
+    #[must_use]
+    pub fn generated_chunk_count(&self) -> usize {
+        self.chunks.len()
+    }
     pub fn get_tile(&mut self, position: (isize, isize)) -> Tile {
         // Chunk coordinates
         let chunk_size = self.get_chunk_size();
