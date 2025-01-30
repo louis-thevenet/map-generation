@@ -4,6 +4,7 @@ use crate::{
     chunk::Chunk,
     terrain_generator::{
         noise_to_map::{Layer, NoiseToMap},
+        perlin_noise::PerlinNoiseGenerator,
         TerrainGenerator,
     },
     tile::{Tile, TileType},
@@ -18,9 +19,12 @@ impl Default for Map {
     fn default() -> Self {
         Self {
             generator: TerrainGenerator::new(16, None)
-                .set_lacunarity(2.0)
-                .set_persistance(0.5)
-                .set_octaves(8)
+                .set_terrain_noise_generator(
+                    PerlinNoiseGenerator::default()
+                        .set_lacunarity(2.0)
+                        .set_persistance(0.5)
+                        .set_octaves(8),
+                )
                 .set_scale(1.0)
                 .set_noise_to_map(
                     NoiseToMap::default()
