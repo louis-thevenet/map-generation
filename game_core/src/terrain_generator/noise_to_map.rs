@@ -61,7 +61,7 @@ impl NoiseToMap {
         .unwrap_or_default();
         Chunk {
             tiles,
-            average_tile,
+            average_tile_type: average_tile,
         }
     }
 }

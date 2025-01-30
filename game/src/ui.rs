@@ -71,7 +71,7 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
 
                     &app.map
                         .get_chunk_from_chunk_coord((x_map, y_map))
-                        .average_tile
+                        .average_tile_type
                 }
             };
             let (symbol, style) = if x == half_width && y == half_height {
