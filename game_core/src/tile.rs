@@ -13,12 +13,15 @@ pub enum TileType {
     Land,
     Mountain,
 }
-#[derive(Debug, Clone, Default)]
-pub struct Tile {
-    pub tile_type: TileType,
-}
+
 impl Hash for TileType {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         state.write_isize(*self as isize);
     }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Tile {
+    pub tile_type: TileType,
+    pub temperature: f64,
 }

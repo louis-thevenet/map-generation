@@ -5,6 +5,11 @@ pub mod perlin_noise;
 const DEFAULT_SCALE: f64 = 40.0;
 /// Length of the permutation vector. We should't see repetition before >~20k pixels.
 const PERMUTATION_LENGTH: usize = 1024 * 16;
+
+/// Lower bound for temperature
+pub const TEMPERATURE_LOWER_BOUND: f64 = -10.0;
+/// Upper bound for temperature
+pub const TEMPERATURE_UPPER_BOUND: f64 = 40.0;
 use noise_to_map::NoiseToMap;
 use perlin_noise::PerlinNoiseGenerator;
 use rand::{seq::SliceRandom, thread_rng, RngCore, SeedableRng};
@@ -19,13 +24,19 @@ pub struct TerrainGenerator {
     scale: f64,
     pub chunk_size: usize,
     pub terrain_noise_generator: PerlinNoiseGenerator,
+    pub temperature_noise_generator: PerlinNoiseGenerator,
     permutations: Vec<usize>,
     noise_to_map: NoiseToMap,
 }
 impl TerrainGenerator {
     #[must_use]
     /// Creates a new `TerrainGenetor` from a `chunk_size` and an optional `seed`
-    pub fn new(chunk_size: usize, seed: Option<u64>) -> Self {
+    pub fn new(
+        chunk_size: usize,
+        seed: Option<u64>,
+        terrain_noise_generator: PerlinNoiseGenerator,
+        temperature_noise_generator: PerlinNoiseGenerator,
+    ) -> Self {
         let mut permutations: Vec<usize> = (0..=PERMUTATION_LENGTH).collect::<Vec<usize>>();
 
         let seed_value = if let Some(seed_value) = seed {
@@ -39,6 +50,8 @@ impl TerrainGenerator {
         permutations.shuffle(&mut rng);
         Self {
             chunk_size,
+            terrain_noise_generator,
+            temperature_noise_generator,
             permutations,
             ..Default::default()
         }
@@ -78,18 +91,35 @@ impl TerrainGenerator {
     pub fn generate_chunk(&self, pos: (isize, isize)) -> Chunk {
         let x = (pos.0 * self.chunk_size as isize) as f64;
         let y = (pos.1 * self.chunk_size as isize) as f64;
-        let mut result = vec![vec![0.0; self.chunk_size]; self.chunk_size];
+        let mut terrain_noise = vec![vec![0.0; self.chunk_size]; self.chunk_size];
+        let mut temperature_noise = vec![vec![0.0; self.chunk_size]; self.chunk_size];
 
-        result.par_iter_mut().enumerate().for_each(|(y_offset, v)| {
-            v.par_iter_mut().enumerate().for_each(move |(x_offset, v)| {
-                *v = self.terrain_noise_generator.noise(
-                    (x + x_offset as f64, y + y_offset as f64),
-                    self.scale,
-                    &self.permutations,
-                );
+        terrain_noise
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(y_offset, v)| {
+                v.par_iter_mut().enumerate().for_each(move |(x_offset, v)| {
+                    *v = self.terrain_noise_generator.noise(
+                        (x + x_offset as f64, y + y_offset as f64),
+                        self.scale,
+                        &self.permutations,
+                    );
+                });
             });
-        });
-        self.noise_to_map.chunk_from_noise(&result)
+        temperature_noise
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(y_offset, v)| {
+                v.par_iter_mut().enumerate().for_each(move |(x_offset, v)| {
+                    *v = self.temperature_noise_generator.noise(
+                        (x + x_offset as f64, y + y_offset as f64),
+                        self.scale,
+                        &self.permutations,
+                    );
+                });
+            });
+        self.noise_to_map
+            .chunk_from_noise(&terrain_noise, &temperature_noise)
     }
 }
 struct Vector2(f64, f64);

@@ -1,9 +1,10 @@
-use strum::EnumCount;
-
 use crate::{
     chunk::Chunk,
     tile::{Tile, TileType},
 };
+use strum::EnumCount;
+
+use super::{TEMPERATURE_LOWER_BOUND, TEMPERATURE_UPPER_BOUND};
 
 #[derive(Default, Debug)]
 pub struct Layer {
@@ -25,12 +26,19 @@ impl NoiseToMap {
         self
     }
     #[must_use]
-    pub fn chunk_from_noise(&self, noise: &[Vec<f64>]) -> Chunk {
-        let mut tiles = vec![vec![]; noise.len()];
+    pub fn chunk_from_noise(
+        &self,
+        terrain_noise: &[Vec<f64>],
+        temperature_noise: &[Vec<f64>],
+    ) -> Chunk {
+        let mut tiles = vec![vec![]; terrain_noise.len()];
         let mut freq = [0; TileType::COUNT];
-        for y in 0..noise.len() {
-            for x in 0..noise[y].len() {
-                let noise = (noise[y][x] + 1.) / 2.;
+
+        let mut temp_sum = 0.0;
+        let mut temp_count = 0;
+        for y in 0..terrain_noise.len() {
+            for x in 0..terrain_noise[y].len() {
+                let noise = (terrain_noise[y][x] + 1.) / 2.;
 
                 let mut tile_type = self
                     .layers
@@ -41,6 +49,7 @@ impl NoiseToMap {
                     })
                     .tile_type;
 
+                // Find the layer that fits the noise
                 for layer in &self.layers {
                     if noise >= layer.treshold {
                         tile_type = layer.tile_type;
@@ -48,7 +57,18 @@ impl NoiseToMap {
                     }
                 }
                 freq[tile_type as usize] += 1;
-                tiles[y].push(Tile { tile_type });
+
+                let temperature = (TEMPERATURE_UPPER_BOUND - TEMPERATURE_LOWER_BOUND)
+                    * (1.0 - (temperature_noise[y][x] + 1.) / 2.)
+                    + TEMPERATURE_LOWER_BOUND;
+
+                temp_sum += temperature;
+                temp_count += 1;
+
+                tiles[y].push(Tile {
+                    tile_type,
+                    temperature,
+                });
             }
         }
         let average_tile = TileType::from_repr(
@@ -59,9 +79,11 @@ impl NoiseToMap {
                 .unwrap_or_default(),
         )
         .unwrap_or_default();
+        let average_temperature = temp_sum / temp_count as f64;
         Chunk {
             tiles,
             average_tile_type: average_tile,
+            average_temperature,
         }
     }
 }

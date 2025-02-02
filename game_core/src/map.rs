@@ -18,33 +18,38 @@ pub struct Map {
 impl Default for Map {
     fn default() -> Self {
         Self {
-            generator: TerrainGenerator::new(16, None)
-                .set_terrain_noise_generator(
-                    PerlinNoiseGenerator::default()
-                        .set_lacunarity(2.0)
-                        .set_persistance(0.5)
-                        .set_octaves(8),
-                )
-                .set_scale(1.0)
-                .set_noise_to_map(
-                    NoiseToMap::default()
-                        .add_layer(Layer {
-                            treshold: 0.85,
-                            tile_type: TileType::Mountain,
-                        })
-                        .add_layer(Layer {
-                            treshold: 0.5,
-                            tile_type: TileType::Land,
-                        })
-                        .add_layer(Layer {
-                            treshold: 0.45,
-                            tile_type: TileType::Beach,
-                        })
-                        .add_layer(Layer {
-                            treshold: 0.0,
-                            tile_type: TileType::Water,
-                        }),
-                ),
+            generator: TerrainGenerator::new(
+                16,
+                None,
+                PerlinNoiseGenerator::default()
+                    .set_lacunarity(2.0)
+                    .set_persistance(0.5)
+                    .set_octaves(8),
+                PerlinNoiseGenerator::default()
+                    .set_lacunarity(2.0)
+                    .set_persistance(0.5)
+                    .set_octaves(2),
+            )
+            .set_scale(1.0)
+            .set_noise_to_map(
+                NoiseToMap::default()
+                    .add_layer(Layer {
+                        treshold: 0.85,
+                        tile_type: TileType::Mountain,
+                    })
+                    .add_layer(Layer {
+                        treshold: 0.5,
+                        tile_type: TileType::Land,
+                    })
+                    .add_layer(Layer {
+                        treshold: 0.45,
+                        tile_type: TileType::Beach,
+                    })
+                    .add_layer(Layer {
+                        treshold: 0.0,
+                        tile_type: TileType::Water,
+                    }),
+            ),
             chunks: HashMap::new(),
         }
     }

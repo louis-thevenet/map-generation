@@ -47,7 +47,7 @@ impl PerlinNoiseGenerator {
         clippy::cast_precision_loss,
         clippy::similar_names
     )]
-    fn perlin(&self, pos: (f64, f64), permutations: &[usize]) -> f64 {
+    fn perlin(pos: (f64, f64), permutations: &[usize]) -> f64 {
         let (x, y) = (pos.0 + POS_OFFSET, pos.1 + POS_OFFSET);
         let (nx, ny) = ((x.floor()) as usize, (y.floor()) as usize);
         let (fx, fy) = (x - x.floor(), y - y.floor());
@@ -78,8 +78,11 @@ impl PerlinNoiseGenerator {
         for oct in 0..self.octaves {
             let freq = self.lacunarity.powi(oct.try_into().unwrap());
             let amplitude = self.persistance.powi(oct.try_into().unwrap());
-            result +=
-                amplitude * self.perlin((pos.0 * freq / scale, pos.1 * freq / scale), permutations);
+            result += amplitude
+                * PerlinNoiseGenerator::perlin(
+                    (pos.0 * freq / scale, pos.1 * freq / scale),
+                    permutations,
+                );
         }
         result
     }
@@ -87,7 +90,7 @@ impl PerlinNoiseGenerator {
     /// Generate noise from coordinates.
     pub fn noise(&self, pos: (f64, f64), scale: f64, permutations: &[usize]) -> f64 {
         if self.octaves == 0 {
-            self.perlin(pos, permutations)
+            PerlinNoiseGenerator::perlin(pos, permutations)
         } else {
             self.fractal_brownian_motion(pos, scale, permutations)
         }
