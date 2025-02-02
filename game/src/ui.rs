@@ -1,7 +1,8 @@
 use crate::{
-    app::{App, MapMode},
+    app::{App, MapMode, VisualizationMode},
     tile_to_ascii::tile_to_ascii,
 };
+use game_core::terrain_generator::{TEMPERATURE_LOWER_BOUND, TEMPERATURE_UPPER_BOUND};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Position, Rect},
@@ -15,7 +16,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     let area = frame.area();
 
     let [info, _] = Layout::horizontal(Constraint::from_percentages([15, 100 - 15])).areas(area);
-    let [fps, info] = Layout::vertical(Constraint::from_lengths([1 + 2, 4 + 2])).areas(info);
+    let [fps, info] = Layout::vertical(Constraint::from_lengths([1 + 2, 5 + 2])).areas(info);
     draw_map(app, frame.buffer_mut(), area);
 
     let _ = app.fps_counter.render_tick();
@@ -30,7 +31,8 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         .render(fps, frame.buffer_mut());
 
     Paragraph::new(vec![
-        format!("{:?}", app.map_mode).into(),
+        format!("Scale: {:?}", app.map_mode).into(),
+        format!("Visualization Mode: {:?}", app.visualization_mode).into(),
         format!("position: {}, {}", app.position.0, app.position.1,).into(),
         format!(
             "Chunk pos: {}, {}",
@@ -46,7 +48,16 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     .render(info, frame.buffer_mut());
 }
 
-#[allow(clippy::cast_possible_wrap)]
+fn sigmoid(x: f64) -> f64 {
+    let beta = 2.0;
+    1.0 / (1.0 + (x / (1. - x))).powf(beta)
+}
+
+#[allow(
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
 fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
     Clear.render(area, buf);
 
@@ -55,29 +66,51 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
 
     for x in area.x as isize..area.width as isize {
         for y in area.y as isize..area.height as isize {
-            let tile_type = match app.map_mode {
+            let (tile_type, temp) = match app.map_mode {
                 // Take current map position
                 // Center it on the screen
                 // Add loop offset
                 MapMode::Local => {
                     let x_map = app.position.0 - half_width + x;
                     let y_map = app.position.1 + half_height - y;
-                    &app.map.get_tile((x_map, y_map)).tile_type
+                    let tile = &app.map.get_tile((x_map, y_map));
+                    (tile.tile_type, tile.temperature)
                 }
                 MapMode::Global => {
                     let chunk_coord = app.map.chunk_coord_from_world_coord(app.position);
                     let x_map = chunk_coord.0 - half_width + x;
                     let y_map = chunk_coord.1 + half_height - y;
 
-                    &app.map
-                        .get_chunk_from_chunk_coord((x_map, y_map))
-                        .average_tile_type
+                    let chunk = &app.map.get_chunk_from_chunk_coord((x_map, y_map));
+                    (chunk.average_tile_type, chunk.average_temperature)
                 }
             };
             let (symbol, style) = if x == half_width && y == half_height {
+                // Center of the screen
                 ("☺".into(), Style::new().fg(ratatui::style::Color::Red))
             } else {
-                tile_to_ascii(tile_type)
+                match app.visualization_mode {
+                    VisualizationMode::Normal => tile_to_ascii(&tile_type),
+                    VisualizationMode::Temperature => {
+                        let (sy, st) = tile_to_ascii(&tile_type);
+                        (
+                            sy,
+                            st.fg(ratatui::style::Color::Rgb(
+                                255 - (255.0
+                                    * (sigmoid(
+                                        (temp - TEMPERATURE_LOWER_BOUND)
+                                            / (TEMPERATURE_UPPER_BOUND - TEMPERATURE_LOWER_BOUND),
+                                    ))) as u8,
+                                0,
+                                (255.0
+                                    * (sigmoid(
+                                        (temp - TEMPERATURE_LOWER_BOUND)
+                                            / (TEMPERATURE_UPPER_BOUND - TEMPERATURE_LOWER_BOUND),
+                                    ))) as u8,
+                            )),
+                        )
+                    }
+                }
             };
 
             let cell = buf.cell_mut(Position::new(

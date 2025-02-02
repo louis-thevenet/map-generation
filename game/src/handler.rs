@@ -21,6 +21,12 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 crate::app::MapMode::Global => crate::app::MapMode::Local,
             }
         }
+        KeyCode::Char('t') => {
+            app.visualization_mode = match app.visualization_mode {
+                crate::app::VisualizationMode::Normal => crate::app::VisualizationMode::Temperature,
+                crate::app::VisualizationMode::Temperature => crate::app::VisualizationMode::Normal,
+            };
+        }
         KeyCode::Up => {
             app.position.1 += if key_event.modifiers == KeyModifiers::CONTROL {
                 CTRL_SPEED_MODIFIER
