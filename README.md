@@ -7,6 +7,7 @@ I wanted to make a simple game where NPCs are played by LLMs. Then I needed a ma
 - `game` is a world viewer powered by Ratatui
 - `game_core` is the world generation at the moment
 - `perlin_to_image` is a simple script to generate a perlin noise image
+- `llm_backend` is the bridge to LLM APIs
 
 ## Checklist
 
