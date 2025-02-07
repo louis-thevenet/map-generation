@@ -21,7 +21,8 @@ use crate::chunk::Chunk;
 #[derive(Default, Debug)]
 /// Represents a perlin noise generator with its settings.
 pub struct TerrainGenerator {
-    scale: f64,
+    terrain_scale: f64,
+    temperature_scale: f64,
     pub chunk_size: usize,
     pub terrain_noise_generator: PerlinNoiseGenerator,
     pub temperature_noise_generator: PerlinNoiseGenerator,
@@ -57,9 +58,16 @@ impl TerrainGenerator {
         }
     }
     #[must_use]
-    pub fn set_scale(self, scale: f64) -> Self {
+    pub fn set_terrain_scale(self, scale: f64) -> Self {
         Self {
-            scale: scale * DEFAULT_SCALE,
+            terrain_scale: scale * DEFAULT_SCALE,
+            ..self
+        }
+    }
+    #[must_use]
+    pub fn set_temperature_scale(self, scale: f64) -> Self {
+        Self {
+            temperature_scale: scale * DEFAULT_SCALE,
             ..self
         }
     }
@@ -101,7 +109,7 @@ impl TerrainGenerator {
                 v.par_iter_mut().enumerate().for_each(move |(x_offset, v)| {
                     *v = self.terrain_noise_generator.noise(
                         (x + x_offset as f64, y + y_offset as f64),
-                        self.scale,
+                        self.terrain_scale,
                         &self.permutations,
                     );
                 });
@@ -113,7 +121,7 @@ impl TerrainGenerator {
                 v.par_iter_mut().enumerate().for_each(move |(x_offset, v)| {
                     *v = self.temperature_noise_generator.noise(
                         (x + x_offset as f64, y + y_offset as f64),
-                        self.scale,
+                        self.temperature_scale,
                         &self.permutations,
                     );
                 });

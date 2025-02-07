@@ -1,7 +1,5 @@
 use std::hash::Hash;
-
-use strum::{EnumCount, FromRepr};
-use strum_macros::EnumIter;
+use strum_macros::{EnumCount, EnumIter, FromRepr};
 
 #[derive(
     Debug, Copy, Clone, Default, PartialEq, PartialOrd, Ord, Eq, EnumCount, EnumIter, FromRepr,
