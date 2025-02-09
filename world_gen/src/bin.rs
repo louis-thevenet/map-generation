@@ -71,9 +71,23 @@ fn save_maps(size: (u32, u32), chunks: &[Vec<Chunk>]) {
     erosion_img.save("erosion_map.png").unwrap();
 }
 
+fn save_biome_map(size: (u32, u32), chunks: &[Vec<Chunk>]) {
+    let mut biome_img = ImageBuffer::new(size.0, size.1);
+
+    for (x, chunk_row) in chunks.iter().enumerate() {
+        for (y, chunk) in chunk_row.iter().enumerate() {
+            let color = Rgb(chunk.biome.color());
+
+            biome_img.put_pixel(x as u32, y as u32, color);
+        }
+    }
+
+    biome_img.save("biome_map.png").unwrap();
+}
+
 fn main() {
-    let width = 512_u32;
-    let height = 512_u32;
+    let width = 256_u32;
+    let height = 256_u32;
 
     let world_gen = WorldGen::default();
     let chunks = (0..width)
@@ -84,4 +98,5 @@ fn main() {
         })
         .collect::<Vec<_>>();
     save_maps((width, height), &chunks);
+    save_biome_map((width, height), &chunks);
 }

@@ -1,3 +1,4 @@
+use biome::BiomeSettings;
 use chunk::Chunk;
 use perlin_noise::PerlinNoiseGenerator;
 use rand::{thread_rng, RngCore};
@@ -78,6 +79,7 @@ impl WorldGen {
             moisture,
             continentalness,
             erosion,
+            biome: BiomeSettings::new(temp, moisture, continentalness, erosion).into(),
         }
     }
 }
