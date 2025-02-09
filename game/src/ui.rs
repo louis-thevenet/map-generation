@@ -2,7 +2,9 @@ use crate::{
     app::{App, MapMode, VisualizationMode},
     tile_to_ascii::tile_to_ascii,
 };
-use game_core::terrain_generator::{TEMPERATURE_LOWER_BOUND, TEMPERATURE_UPPER_BOUND};
+use game_core::terrain_generator::{
+    noise_to_map::TEMPERATURE_HEIGHT_IMPACT, TEMPERATURE_LOWER_BOUND, TEMPERATURE_UPPER_BOUND,
+};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Position, Rect},
@@ -48,11 +50,6 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     .render(info, frame.buffer_mut());
 }
 
-fn sigmoid(x: f64) -> f64 {
-    let beta = 2.0;
-    1.0 / (1.0 + (x / (1. - x))).powf(beta)
-}
-
 #[allow(
     clippy::cast_possible_wrap,
     clippy::cast_possible_truncation,
@@ -92,21 +89,17 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
                 match app.visualization_mode {
                     VisualizationMode::Normal => tile_to_ascii(&tile_type),
                     VisualizationMode::Temperature => {
+                        let (tmax, tmin) = (
+                            TEMPERATURE_UPPER_BOUND,
+                            (TEMPERATURE_LOWER_BOUND - TEMPERATURE_HEIGHT_IMPACT),
+                        );
                         let (sy, st) = tile_to_ascii(&tile_type);
                         (
                             sy,
                             st.fg(ratatui::style::Color::Rgb(
-                                255 - (255.0
-                                    * (sigmoid(
-                                        (temp - TEMPERATURE_LOWER_BOUND)
-                                            / (TEMPERATURE_UPPER_BOUND - TEMPERATURE_LOWER_BOUND),
-                                    ))) as u8,
+                                (255.0 * ((temp - tmin) / (tmax - tmin))) as u8,
                                 0,
-                                (255.0
-                                    * (sigmoid(
-                                        (temp - TEMPERATURE_LOWER_BOUND)
-                                            / (TEMPERATURE_UPPER_BOUND - TEMPERATURE_LOWER_BOUND),
-                                    ))) as u8,
+                                255 - (255.0 * ((temp - tmin) / (tmax - tmin))) as u8,
                             )),
                         )
                     }
