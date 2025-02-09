@@ -1,5 +1,5 @@
 [package]
-name = "game"
+name = "world_viewer"
 version = "0.1.0"
 authors = ["Louis Thevenet <louis.tvnt@gmail.com>"]
 license = "MIT"

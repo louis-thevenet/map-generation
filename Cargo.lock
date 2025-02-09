@@ -556,24 +556,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "game"
-version = "0.1.0"
-dependencies = [
- "color-eyre",
- "crossterm",
- "directories",
- "futures",
- "game_core",
- "lazy_static",
- "rand",
- "ratatui",
- "tokio",
- "tracing",
- "tracing-error",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "game_core"
 version = "0.1.0"
 dependencies = [
@@ -2047,6 +2029,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86e376c75f4f43f44db463cf729e0d3acbf954d13e22c51e26e4c264b4ab545f"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "world_viewer"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "crossterm",
+ "directories",
+ "futures",
+ "game_core",
+ "lazy_static",
+ "rand",
+ "ratatui",
+ "tokio",
+ "tracing",
+ "tracing-error",
+ "tracing-subscriber",
 ]
 
 [[package]]

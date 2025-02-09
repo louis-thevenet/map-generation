@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-  "game",
+  "world_viewer",
   "game_core",
   "llm_backend",
   "perlin_to_image",
