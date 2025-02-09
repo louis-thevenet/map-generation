@@ -23,7 +23,13 @@ I wanted to make a simple game where NPCs are played by LLMs. Then I needed a ma
 ## Checklist
 
 - [x] Procedural terrain generation
-- [ ] Temperature based on latitude
+    ![image](https://github.com/user-attachments/assets/3b5ce26d-b6c2-4f03-8bd0-8db0a97d3bb0)
+
+- [x] Temperature based on latitude (with smaller variation based on local height)
+    ![image](https://github.com/user-attachments/assets/b2e9498e-01fe-4b07-88a4-9e8b7a7b8518)
+    ![image](https://github.com/user-attachments/assets/15c77c63-5455-4681-8d19-ec372c76c55d)
+
+
 - [ ] Procedural biome generation (most likely based on voronoi diagrams)
 - [ ] Procedural city generation (don't know how to place cities yet)
 - [ ] LLM backed NPCs
