@@ -18,14 +18,10 @@
       perSystem =
         {
           config,
-          self',
           pkgs,
-          lib,
-          system,
           ...
         }:
         let
-          cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
           rust-toolchain = pkgs.symlinkJoin {
             name = "rust-toolchain";
             paths = with pkgs; [
@@ -42,21 +38,31 @@
             ];
           };
 
-          buildInputs = with pkgs; [ ];
-          nativeBuildInputs = with pkgs; [ ];
         in
-        {
+        rec {
           # Rust package
-          packages.default = pkgs.rustPlatform.buildRustPackage {
-            inherit (cargoToml.package) name version;
-            src = ./.;
-            cargoLock.lockFile = ./Cargo.lock;
+          packages.world_viewer =
+            let
+              cargoToml = builtins.fromTOML (builtins.readFile ./world_viewer/Cargo.toml);
+            in
+            pkgs.rustPlatform.buildRustPackage rec {
+              inherit (cargoToml.package) name version;
+              src = ./.;
+              cargoLock.lockFile = ./Cargo.lock;
+              cargoBuildFlags = "-p " + name;
+            };
+          packages.default = packages.world_viewer;
+          packages.perlin_image =
+            let
+              cargoToml = builtins.fromTOML (builtins.readFile ./perlin_to_image/Cargo.toml);
+            in
+            pkgs.rustPlatform.buildRustPackage rec {
+              inherit (cargoToml.package) name version;
+              src = ./.;
+              cargoLock.lockFile = ./Cargo.lock;
+              cargoBuildFlags = "-p " + name;
 
-            RUST_BACKTRACE = "full";
-
-            nativeBuildInputs = nativeBuildInputs;
-            buildInputs = buildInputs;
-          };
+            };
 
           # Rust dev environment
           devShells.default = pkgs.mkShell {
@@ -66,14 +72,11 @@
             RUST_BACKTRACE = "full";
             RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
 
-            packages =
-              nativeBuildInputs
-              ++ buildInputs
-              ++ [
-                rust-toolchain
-                pkgs.clippy
-                pkgs.hyperfine
-              ];
+            packages = [
+              rust-toolchain
+              pkgs.clippy
+              pkgs.hyperfine
+            ];
           };
 
           # Add your auto-formatters here.
