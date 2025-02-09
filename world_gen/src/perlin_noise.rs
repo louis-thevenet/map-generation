@@ -1,15 +1,38 @@
-use super::Vector2;
+use rand::{seq::SliceRandom, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
 /// Offset used to handle negative positions
 const POS_OFFSET: f64 = 1024.0;
-
+/// So that 1.0 is a good scale.
+const DEFAULT_SCALE: f64 = 1.0;
+/// Length of the permutation vector. We should't see repetition before >~20k pixels.
+const PERMUTATION_LENGTH: usize = 1024 * 16;
+pub struct Vector2(f64, f64);
+impl Vector2 {
+    fn dot_product(self, rhs: &Self) -> f64 {
+        self.0.mul_add(rhs.0, self.1 * rhs.1)
+    }
+}
 #[derive(Default, Debug)]
 pub struct PerlinNoiseGenerator {
+    scale: f64,
+
+    permutations: Vec<usize>,
     lacunarity: f64,
     octaves: usize,
     persistance: f64,
 }
 impl PerlinNoiseGenerator {
+    pub fn new(seed: u64) -> Self {
+        let mut permutations: Vec<usize> = (0..=PERMUTATION_LENGTH).collect::<Vec<usize>>();
+
+        let mut rng = ChaCha8Rng::seed_from_u64(seed);
+        permutations.shuffle(&mut rng);
+        Self {
+            permutations,
+            ..Default::default()
+        }
+    }
     #[must_use]
     pub fn set_lacunarity(self, lacunarity: f64) -> Self {
         Self { lacunarity, ..self }
@@ -24,6 +47,10 @@ impl PerlinNoiseGenerator {
     #[must_use]
     pub fn set_octaves(self, octaves: usize) -> Self {
         Self { octaves, ..self }
+    }
+    #[must_use]
+    pub fn set_scale(self, scale: f64) -> Self {
+        Self { scale, ..self }
     }
     const fn constant_vector(h: usize) -> Vector2 {
         match h % 4 {
@@ -47,7 +74,7 @@ impl PerlinNoiseGenerator {
         clippy::cast_precision_loss,
         clippy::similar_names
     )]
-    fn perlin(pos: (f64, f64), permutations: &[usize]) -> f64 {
+    fn perlin(&self, pos: (f64, f64)) -> f64 {
         let (x, y) = (pos.0 + POS_OFFSET, pos.1 + POS_OFFSET);
         let (nx, ny) = ((x.floor()) as usize, (y.floor()) as usize);
         let (fx, fy) = (x - x.floor(), y - y.floor());
@@ -57,11 +84,11 @@ impl PerlinNoiseGenerator {
         let br = Vector2(fx - 1.0, fy);
         let bl = Vector2(fx, fy);
 
-        let size = permutations.len();
-        let v_tr = permutations[(permutations[(nx + 1) % size] + (ny + 1) % size) % size];
-        let v_tl = permutations[(permutations[nx % size] + (ny + 1) % size) % size];
-        let v_br = permutations[(permutations[(nx + 1) % size] + ny % size) % size];
-        let v_bl = permutations[(permutations[nx % size] + ny % size) % size];
+        let size = self.permutations.len();
+        let v_tr = self.permutations[(self.permutations[(nx + 1) % size] + (ny + 1) % size) % size];
+        let v_tl = self.permutations[(self.permutations[nx % size] + (ny + 1) % size) % size];
+        let v_br = self.permutations[(self.permutations[(nx + 1) % size] + ny % size) % size];
+        let v_bl = self.permutations[(self.permutations[nx % size] + ny % size) % size];
 
         let d_tr = tr.dot_product(&Self::constant_vector(v_tr));
         let d_tl = tl.dot_product(&Self::constant_vector(v_tl));
@@ -73,26 +100,23 @@ impl PerlinNoiseGenerator {
 
         Self::lerp(u, Self::lerp(v, d_bl, d_tl), Self::lerp(v, d_br, d_tr))
     }
-    fn fractal_brownian_motion(&self, pos: (f64, f64), scale: f64, permutations: &[usize]) -> f64 {
+    fn fractal_brownian_motion(&self, pos: (f64, f64)) -> f64 {
         let mut result = 0.0;
         for oct in 0..self.octaves {
             let freq = self.lacunarity.powi(oct.try_into().unwrap());
             let amplitude = self.persistance.powi(oct.try_into().unwrap());
-            result += amplitude
-                * PerlinNoiseGenerator::perlin(
-                    (pos.0 * freq / scale, pos.1 * freq / scale),
-                    permutations,
-                );
+            result +=
+                amplitude * self.perlin((pos.0 * freq / self.scale, pos.1 * freq / self.scale));
         }
         result
     }
     #[must_use]
     /// Generate noise from coordinates.
-    pub fn noise(&self, pos: (f64, f64), scale: f64, permutations: &[usize]) -> f64 {
+    pub fn noise(&self, pos: (f64, f64)) -> f64 {
         if self.octaves == 0 {
-            PerlinNoiseGenerator::perlin(pos, permutations)
+            self.perlin(pos)
         } else {
-            self.fractal_brownian_motion(pos, scale, permutations)
+            self.fractal_brownian_motion(pos)
         }
     }
 }

@@ -1,13 +1,7 @@
-use crate::{
-    app::{App, MapMode, VisualizationMode},
-    tile_to_ascii::tile_to_ascii,
-};
-use game_core::terrain_generator::{
-    noise_to_map::TEMPERATURE_HEIGHT_IMPACT, TEMPERATURE_LOWER_BOUND, TEMPERATURE_UPPER_BOUND,
-};
+use crate::app::App;
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Position, Rect},
+    layout::{Constraint, Layout, Rect},
     style::Style,
     widgets::{Block, Clear, Paragraph, Widget},
     Frame,
@@ -62,58 +56,57 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
     let half_height = area.height as isize / 2;
 
     for x in area.x as isize..area.width as isize {
-        for y in area.y as isize..area.height as isize {
-            let (tile_type, temp) = match app.map_mode {
-                // Take current map position
-                // Center it on the screen
-                // Add loop offset
-                MapMode::Local => {
-                    let x_map = app.position.0 - half_width + x;
-                    let y_map = app.position.1 + half_height - y;
-                    let tile = &app.map.get_tile((x_map, y_map));
-                    (tile.tile_type, tile.temperature)
-                }
-                MapMode::Global => {
-                    let chunk_coord = app.map.chunk_coord_from_world_coord(app.position);
-                    let x_map = chunk_coord.0 - half_width + x;
-                    let y_map = chunk_coord.1 + half_height - y;
+        // for y in area.y as isize..area.height as isize {
+        //     let (tile_type, temp) = match app.map_mode {
+        //         // Take current map position
+        //         // Center it on the screen
+        //         // Add loop offset
+        //         MapMode::Local => {
+        //             let x_map = app.position.0 - half_width + x;
+        //             let y_map = app.position.1 + half_height - y;
+        //             let tile = &app.map.get_tile((x_map, y_map));
+        //             (tile.tile_type, tile.temperature)
+        //         }
+        //         MapMode::Global => {
+        //             let chunk_coord = app.map.chunk_coord_from_world_coord(app.position);
+        //             let x_map = chunk_coord.0 - half_width + x;
+        //             let y_map = chunk_coord.1 + half_height - y;
 
-                    let chunk = &app.map.get_chunk_from_chunk_coord((x_map, y_map));
-                    (chunk.average_tile_type, chunk.average_temperature)
-                }
-            };
-            let (symbol, style) = if x == half_width && y == half_height {
-                // Center of the screen
-                ("☺".into(), Style::new().fg(ratatui::style::Color::Red))
-            } else {
-                match app.visualization_mode {
-                    VisualizationMode::Normal => tile_to_ascii(&tile_type),
-                    VisualizationMode::Temperature => {
-                        let (tmax, tmin) = (
-                            TEMPERATURE_UPPER_BOUND,
-                            (TEMPERATURE_LOWER_BOUND - TEMPERATURE_HEIGHT_IMPACT),
-                        );
-                        let (sy, st) = tile_to_ascii(&tile_type);
-                        (
-                            sy,
-                            st.fg(ratatui::style::Color::Rgb(
-                                (255.0 * ((temp - tmin) / (tmax - tmin))) as u8,
-                                0,
-                                255 - (255.0 * ((temp - tmin) / (tmax - tmin))) as u8,
-                            )),
-                        )
-                    }
-                }
-            };
+        //             let chunk = &app.map.get_chunk_from_chunk_coord((x_map, y_map));
+        //             (chunk.average_tile_type, chunk.average_temperature)
+        //         }
+        //     };
+        //     let (symbol, style) = if x == half_width && y == half_height {
+        //         // Center of the screen
+        //         ("☺".into(), Style::new().fg(ratatui::style::Color::Red))
+        //     } else {
+        //         match app.visualization_mode {
+        //             VisualizationMode::Normal => tile_to_ascii(&tile_type),
+        //             VisualizationMode::Temperature => {
+        //                 let (tmax, tmin) = (
+        //                     TEMPERATURE_UPPER_BOUND,
+        //                     (TEMPERATURE_LOWER_BOUND - TEMPERATURE_HEIGHT_IMPACT),
+        //                 );
+        //                 let (sy, st) = tile_to_ascii(&tile_type);
+        //                 (
+        //                     sy,
+        //                     st.fg(ratatui::style::Color::Rgb(
+        //                         (255.0 * ((temp - tmin) / (tmax - tmin))) as u8,
+        //                         0,
+        //                         255 - (255.0 * ((temp - tmin) / (tmax - tmin))) as u8,
+        //                     )),
+        //                 )
+        //             }
+        //         }
+        //     };
 
-            let cell = buf.cell_mut(Position::new(
-                x.try_into().unwrap_or_default(),
-                y.try_into().unwrap_or_default(),
-            ));
-            if let Some(c) = cell {
-                c.set_symbol(&symbol);
-                c.set_style(style);
-            }
-        }
+        //     let cell = buf.cell_mut(Position::new(
+        //         x.try_into().unwrap_or_default(),
+        //         y.try_into().unwrap_or_default(),
+        //     ));
+        //     if let Some(c) = cell {
+        //         c.set_symbol(&symbol);
+        //         c.set_style(style);
+        //     }
     }
 }

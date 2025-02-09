@@ -1,11 +1,19 @@
 [package]
-name = "perlin_to_image"
+name = "world_gen"
 version = "0.1.0"
 edition = "2021"
+
+
+[lib]
+name = "world_gen"
+path = "src/lib.rs"
+
+[[bin]]
+name = "perlin_viewer"
+path = "src/bin.rs"
 
 [dependencies]
 image = "0.25.5"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 rayon = "1.10.0"
-game_core = { path = "../game_core" }
