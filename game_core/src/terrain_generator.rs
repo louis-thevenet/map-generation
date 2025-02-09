@@ -22,10 +22,8 @@ use crate::chunk::Chunk;
 /// Represents a perlin noise generator with its settings.
 pub struct TerrainGenerator {
     terrain_scale: f64,
-    temperature_scale: f64,
     pub chunk_size: usize,
     pub terrain_noise_generator: PerlinNoiseGenerator,
-    pub temperature_noise_generator: PerlinNoiseGenerator,
     permutations: Vec<usize>,
     noise_to_map: NoiseToMap,
 }
@@ -36,7 +34,6 @@ impl TerrainGenerator {
         chunk_size: usize,
         seed: Option<u64>,
         terrain_noise_generator: PerlinNoiseGenerator,
-        temperature_noise_generator: PerlinNoiseGenerator,
     ) -> Self {
         let mut permutations: Vec<usize> = (0..=PERMUTATION_LENGTH).collect::<Vec<usize>>();
 
@@ -52,7 +49,6 @@ impl TerrainGenerator {
         Self {
             chunk_size,
             terrain_noise_generator,
-            temperature_noise_generator,
             permutations,
             ..Default::default()
         }
@@ -61,13 +57,6 @@ impl TerrainGenerator {
     pub fn set_terrain_scale(self, scale: f64) -> Self {
         Self {
             terrain_scale: scale * DEFAULT_SCALE,
-            ..self
-        }
-    }
-    #[must_use]
-    pub fn set_temperature_scale(self, scale: f64) -> Self {
-        Self {
-            temperature_scale: scale * DEFAULT_SCALE,
             ..self
         }
     }
@@ -100,8 +89,6 @@ impl TerrainGenerator {
         let x = (pos.0 * self.chunk_size as isize) as f64;
         let y = (pos.1 * self.chunk_size as isize) as f64;
         let mut terrain_noise = vec![vec![0.0; self.chunk_size]; self.chunk_size];
-        let mut temperature_noise = vec![vec![0.0; self.chunk_size]; self.chunk_size];
-
         terrain_noise
             .par_iter_mut()
             .enumerate()
@@ -114,20 +101,7 @@ impl TerrainGenerator {
                     );
                 });
             });
-        temperature_noise
-            .par_iter_mut()
-            .enumerate()
-            .for_each(|(y_offset, v)| {
-                v.par_iter_mut().enumerate().for_each(move |(x_offset, v)| {
-                    *v = self.temperature_noise_generator.noise(
-                        (x + x_offset as f64, y + y_offset as f64),
-                        self.temperature_scale,
-                        &self.permutations,
-                    );
-                });
-            });
-        self.noise_to_map
-            .chunk_from_noise(&terrain_noise, &temperature_noise)
+        self.noise_to_map.chunk_from_noise(pos, &terrain_noise)
     }
 }
 struct Vector2(f64, f64);

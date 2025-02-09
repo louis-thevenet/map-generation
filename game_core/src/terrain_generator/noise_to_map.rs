@@ -4,8 +4,9 @@ use crate::{
 };
 use strum::EnumCount;
 
-use super::{TEMPERATURE_LOWER_BOUND, TEMPERATURE_UPPER_BOUND};
-
+use super::TEMPERATURE_UPPER_BOUND;
+const CHUNKS_BEFORE_TEMPERATURE_IS_LOWER_BOUND: f64 = 1e3;
+pub const TEMPERATURE_HEIGHT_IMPACT: f64 = 50.;
 #[derive(Default, Debug)]
 pub struct Layer {
     pub treshold: f64,
@@ -25,12 +26,12 @@ impl NoiseToMap {
             .sort_by(|l1, l2| l2.treshold.total_cmp(&l1.treshold));
         self
     }
+    fn temp_variation_profile(x: f64) -> f64 {
+        let a: f64 = 1000.;
+        (a.powf(x) - 1.) / (a - 1.)
+    }
     #[must_use]
-    pub fn chunk_from_noise(
-        &self,
-        terrain_noise: &[Vec<f64>],
-        temperature_noise: &[Vec<f64>],
-    ) -> Chunk {
+    pub fn chunk_from_noise(&self, pos: (isize, isize), terrain_noise: &[Vec<f64>]) -> Chunk {
         let mut tiles = vec![vec![]; terrain_noise.len()];
         let mut freq = [0; TileType::COUNT];
 
@@ -58,13 +59,13 @@ impl NoiseToMap {
                 }
                 freq[tile_type as usize] += 1;
 
-                let temperature = (TEMPERATURE_UPPER_BOUND - TEMPERATURE_LOWER_BOUND)
-                    * (1.0 - (temperature_noise[y][x] + 1.) / 2.)
-                    + TEMPERATURE_LOWER_BOUND;
+                let base_temperature = TEMPERATURE_UPPER_BOUND
+                    * (1. - (pos.1 as f64).abs() / CHUNKS_BEFORE_TEMPERATURE_IS_LOWER_BOUND);
 
-                temp_sum += temperature;
+                let temperature = base_temperature
+                    - Self::temp_variation_profile(noise) * TEMPERATURE_HEIGHT_IMPACT;
                 temp_count += 1;
-
+                temp_sum += temperature;
                 tiles[y].push(Tile {
                     tile_type,
                     temperature,
@@ -79,7 +80,7 @@ impl NoiseToMap {
                 .unwrap_or_default(),
         )
         .unwrap_or_default();
-        let average_temperature = temp_sum / temp_count as f64;
+        let average_temperature = temp_sum / f64::from(temp_count);
         Chunk {
             tiles,
             average_tile_type: average_tile,

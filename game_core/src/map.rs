@@ -25,13 +25,8 @@ impl Default for Map {
                     .set_lacunarity(2.0)
                     .set_persistance(0.5)
                     .set_octaves(8),
-                PerlinNoiseGenerator::default()
-                    .set_lacunarity(2.0)
-                    .set_persistance(0.5)
-                    .set_octaves(2),
             )
             .set_terrain_scale(1.0)
-            .set_temperature_scale(1.0)
             .set_noise_to_map(
                 NoiseToMap::default()
                     .add_layer(Layer {
@@ -58,10 +53,8 @@ impl Default for Map {
 impl Map {
     #[must_use]
     pub fn new(terrain_scale: f64) -> Self {
-        let temp_scale = terrain_scale * 16.0;
         let mut res = Self::default();
         res.generator = res.generator.set_terrain_scale(terrain_scale);
-        res.generator = res.generator.set_temperature_scale(temp_scale);
         res
     }
     /// Get a reference to a `Chunk` from its coordinates.
