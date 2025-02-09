@@ -1,7 +1,7 @@
 use crate::app::App;
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Position, Rect},
     style::Style,
     widgets::{Block, Clear, Paragraph, Widget},
     Frame,
@@ -28,7 +28,11 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 
     Paragraph::new(vec![
         format!("Scale: {:?}", app.map_mode).into(),
-        format!("Visualization Mode: {:?}", app.visualization_mode).into(),
+        format!(
+            "Current biome: {:?}",
+            app.map.get_chunk_from_world_coord(app.position).biome
+        )
+        .into(),
         format!("position: {}, {}", app.position.0, app.position.1,).into(),
         format!(
             "Chunk pos: {}, {}",
@@ -52,61 +56,40 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
     Clear.render(area, buf);
 
-    let half_width = area.width as isize / 2;
+    let quarter_width = area.width as isize / 4;
     let half_height = area.height as isize / 2;
 
-    for x in area.x as isize..area.width as isize {
-        // for y in area.y as isize..area.height as isize {
-        //     let (tile_type, temp) = match app.map_mode {
-        //         // Take current map position
-        //         // Center it on the screen
-        //         // Add loop offset
-        //         MapMode::Local => {
-        //             let x_map = app.position.0 - half_width + x;
-        //             let y_map = app.position.1 + half_height - y;
-        //             let tile = &app.map.get_tile((x_map, y_map));
-        //             (tile.tile_type, tile.temperature)
-        //         }
-        //         MapMode::Global => {
-        //             let chunk_coord = app.map.chunk_coord_from_world_coord(app.position);
-        //             let x_map = chunk_coord.0 - half_width + x;
-        //             let y_map = chunk_coord.1 + half_height - y;
+    for x in (0..(area.width - area.x) as isize).step_by(2) {
+        for y in 0..(area.height - area.y) as isize {
+            let chunk_coord = app.map.chunk_coord_from_world_coord(app.position);
+            let x_map = chunk_coord.0 + x / 2 - quarter_width;
 
-        //             let chunk = &app.map.get_chunk_from_chunk_coord((x_map, y_map));
-        //             (chunk.average_tile_type, chunk.average_temperature)
-        //         }
-        //     };
-        //     let (symbol, style) = if x == half_width && y == half_height {
-        //         // Center of the screen
-        //         ("☺".into(), Style::new().fg(ratatui::style::Color::Red))
-        //     } else {
-        //         match app.visualization_mode {
-        //             VisualizationMode::Normal => tile_to_ascii(&tile_type),
-        //             VisualizationMode::Temperature => {
-        //                 let (tmax, tmin) = (
-        //                     TEMPERATURE_UPPER_BOUND,
-        //                     (TEMPERATURE_LOWER_BOUND - TEMPERATURE_HEIGHT_IMPACT),
-        //                 );
-        //                 let (sy, st) = tile_to_ascii(&tile_type);
-        //                 (
-        //                     sy,
-        //                     st.fg(ratatui::style::Color::Rgb(
-        //                         (255.0 * ((temp - tmin) / (tmax - tmin))) as u8,
-        //                         0,
-        //                         255 - (255.0 * ((temp - tmin) / (tmax - tmin))) as u8,
-        //                     )),
-        //                 )
-        //             }
-        //         }
-        //     };
+            let y_map = chunk_coord.1 - y + half_height;
 
-        //     let cell = buf.cell_mut(Position::new(
-        //         x.try_into().unwrap_or_default(),
-        //         y.try_into().unwrap_or_default(),
-        //     ));
-        //     if let Some(c) = cell {
-        //         c.set_symbol(&symbol);
-        //         c.set_style(style);
-        //     }
+            let chunk = &app.map.get_chunk_from_chunk_coord((x_map, y_map));
+            let (symbol, style) = if (x_map, y_map) == chunk_coord {
+                ("@", Style::new().fg(ratatui::style::Color::Red))
+            } else {
+                let color = chunk.biome.color();
+                (
+                    " ",
+                    Style::new().bg(ratatui::style::Color::Rgb(color[0], color[1], color[2])),
+                )
+            };
+
+            let cell = buf.cell_mut(Position::new(x as u16 + area.x, y as u16 + area.y));
+            if let Some(c) = cell {
+                c.set_symbol(symbol);
+                c.set_style(style);
+            }
+            let cell = buf.cell_mut(Position::new(
+                (x + 1).try_into().unwrap_or_default(),
+                y.try_into().unwrap_or_default(),
+            ));
+            if let Some(c) = cell {
+                c.set_symbol(symbol);
+                c.set_style(style);
+            }
+        }
     }
 }

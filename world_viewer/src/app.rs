@@ -25,7 +25,6 @@ pub struct App {
     /// Is the application running?
     pub running: bool,
     pub map_mode: MapMode,
-    pub visualization_mode: VisualizationMode,
     pub position: (isize, isize),
     pub map: Map,
     pub fps_counter: FpsCounter,
@@ -39,7 +38,6 @@ impl Default for App {
             position: (0, 0),
             map_mode: MapMode::Global,
             fps_counter: FpsCounter::new(),
-            visualization_mode: VisualizationMode::Normal,
         }
     }
 }
