@@ -43,8 +43,9 @@ pub struct BiomeSettings {
 
 impl BiomeSettings {
     pub fn new(temp: f64, moisture: f64, continentalness: f64, erosion: f64) -> Self {
+        // -2 is a temp fix because the noise generator can generate values outside [-1,1]
         let temperature = match temp {
-            -1.0..=-0.8 => TemperatureLevel::Freezing,
+            -2.0..=-0.8 => TemperatureLevel::Freezing,
             -0.8..=-0.4 => TemperatureLevel::Cold,
             -0.4..=0.4 => TemperatureLevel::Temperate,
             0.4..=0.8 => TemperatureLevel::Warm,
@@ -52,7 +53,7 @@ impl BiomeSettings {
         };
 
         let moisture = match moisture {
-            -1.0..=-0.8 => MoistureLevel::Arid,
+            -2.0..=-0.8 => MoistureLevel::Arid,
             -0.8..=-0.4 => MoistureLevel::Dry,
             -0.4..=0.4 => MoistureLevel::Moderate,
             0.4..=0.8 => MoistureLevel::Wet,
@@ -60,15 +61,15 @@ impl BiomeSettings {
         };
 
         let continentalness = match continentalness {
-            -1.0..=-0.8 => ContinentalnessLevel::DeepWater,
-            -0.8..=-0.2 => ContinentalnessLevel::ShallowWater,
-            -0.2..=0.4 => ContinentalnessLevel::Beach,
+            -2.0..=-0.8 => ContinentalnessLevel::DeepWater,
+            -0.8..=0.0 => ContinentalnessLevel::ShallowWater,
+            0.0..=0.4 => ContinentalnessLevel::Beach,
             0.4..=0.8 => ContinentalnessLevel::Land,
             _ => ContinentalnessLevel::Farland,
         };
 
         let erosion = match erosion {
-            -1.0..=-0.6 => ErosionLevel::Flat,
+            -2.0..=-0.6 => ErosionLevel::Flat,
             -0.6..=0.2 => ErosionLevel::SlightHills,
             -0.2..=0.6 => ErosionLevel::Hills,
             _ => ErosionLevel::Mountains,
@@ -98,7 +99,7 @@ enum IntermediateBiomeType {
 
     // Farland biomes
     Plateau,
-    HighMontains,
+    HighMountains,
 }
 
 struct IntermediateBiome {
@@ -111,22 +112,24 @@ impl From<BiomeSettings> for IntermediateBiomeType {
         match settings.continentalness {
             ContinentalnessLevel::DeepWater => IntermediateBiomeType::DeepWater,
 
-            ContinentalnessLevel::ShallowWater => IntermediateBiomeType::ShallowWater,
-            ContinentalnessLevel::Beach => match settings.erosion {
-                ErosionLevel::Flat | ErosionLevel::SlightHills => IntermediateBiomeType::Beach,
-                ErosionLevel::Hills | ErosionLevel::Mountains => IntermediateBiomeType::Cliff,
+            ContinentalnessLevel::ShallowWater => match settings.erosion {
+                ErosionLevel::Flat | ErosionLevel::SlightHills | ErosionLevel::Hills => {
+                    IntermediateBiomeType::ShallowWater
+                }
+                ErosionLevel::Mountains => IntermediateBiomeType::Cliff,
             },
             ContinentalnessLevel::Land => match settings.erosion {
                 ErosionLevel::Flat | ErosionLevel::SlightHills => IntermediateBiomeType::Plain,
                 ErosionLevel::Hills => IntermediateBiomeType::Hills,
-
-                ErosionLevel::Mountains => IntermediateBiomeType::Mountains,
+                ErosionLevel::Mountains => IntermediateBiomeType::HighMountains,
             },
             ContinentalnessLevel::Farland => match settings.erosion {
-                ErosionLevel::Flat | ErosionLevel::SlightHills => IntermediateBiomeType::Plateau,
-                ErosionLevel::Hills => IntermediateBiomeType::Mountains,
-                ErosionLevel::Mountains => IntermediateBiomeType::HighMontains,
+                ErosionLevel::Flat | ErosionLevel::SlightHills => IntermediateBiomeType::Plain,
+                ErosionLevel::Hills => IntermediateBiomeType::Plateau,
+
+                ErosionLevel::Mountains => IntermediateBiomeType::HighMountains,
             },
+            ContinentalnessLevel::Beach => IntermediateBiomeType::Beach,
         }
     }
 }
@@ -164,7 +167,7 @@ pub enum BiomeType {
 
     // Farland biomes
     Plateau,
-    HighMontains,
+    HighMountains,
 }
 impl BiomeType {
     pub fn color(&self) -> [u8; 3] {
@@ -197,7 +200,7 @@ impl BiomeType {
             BiomeType::IceMountains => [234, 239, 240],
 
             BiomeType::Plateau => [179, 197, 201],
-            BiomeType::HighMontains => [105, 111, 112],
+            BiomeType::HighMountains => [105, 111, 112],
         }
     }
 }
@@ -263,7 +266,7 @@ impl From<IntermediateBiome> for BiomeType {
 
             IntermediateBiomeType::Plateau => BiomeType::Plateau,
 
-            IntermediateBiomeType::HighMontains => BiomeType::HighMontains,
+            IntermediateBiomeType::HighMountains => BiomeType::HighMountains,
         }
     }
 }
