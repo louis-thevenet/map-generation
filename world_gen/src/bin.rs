@@ -1,6 +1,7 @@
-mod perlin_noise;
+use std::env;
 
 use image::{ImageBuffer, Rgb};
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use world_gen::{chunk::Chunk, WorldGen};
 
 // pub fn draw_grid(img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, cell_size: u32) {
@@ -86,8 +87,14 @@ fn save_biome_map(size: (u32, u32), chunks: &[Vec<Chunk>]) {
 }
 
 fn main() {
-    let width = 256_u32;
-    let height = 256_u32;
+    let args: Vec<String> = env::args().collect();
+    let width = if args.len() > 1 {
+        args[1].parse().unwrap()
+    } else {
+        1024
+    };
+
+    let height = width;
 
     let world_gen = WorldGen::default();
     let chunks = (0..width)
