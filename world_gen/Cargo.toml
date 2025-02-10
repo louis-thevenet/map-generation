@@ -14,6 +14,7 @@ path = "src/bin.rs"
 
 [dependencies]
 image = "0.25.5"
+progressing = "3.0.2"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 rayon = "1.10.0"

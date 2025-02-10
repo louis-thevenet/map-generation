@@ -1,6 +1,7 @@
 use std::env;
 
 use image::{ImageBuffer, Rgb};
+use progressing::{clamping, mapping, Baring};
 use world_gen::{chunk::Chunk, WorldGen};
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -68,10 +69,15 @@ fn main() {
     };
 
     let height = width;
+    let mut progress_bar = mapping::Bar::with_range(0, height * width).timed();
+    progress_bar.set_len(20);
 
     let world_gen = WorldGen::default();
     let chunks = (-width / 2..width / 2)
         .map(|x| {
+            progress_bar.set((x + width / 2) * height);
+
+            print!("\r{}", progress_bar);
             (-height / 2..height / 2)
                 .map(|y| world_gen.generate_chunk((x.try_into().unwrap(), y.try_into().unwrap())))
                 .collect::<Vec<_>>()
