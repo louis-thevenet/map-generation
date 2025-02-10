@@ -25,7 +25,7 @@ pub struct App {
     pub running: bool,
     pub map_mode: MapMode,
     pub current_scale: f64,
-    pub position: (isize, isize),
+    pub position: (f64, f64),
     pub map: Map,
     pub fps_counter: FpsCounter,
 }
@@ -36,7 +36,7 @@ impl Default for App {
             running: true,
             current_scale: 1.0,
             map: Map::new(1.0),
-            position: (0, 0),
+            position: (0., 0.),
             map_mode: MapMode::Global,
             fps_counter: FpsCounter::new(),
         }

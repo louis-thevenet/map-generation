@@ -15,6 +15,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     let [fps, info] = Layout::vertical(Constraint::from_lengths([1 + 2, 5 + 2])).areas(info);
     draw_map(app, frame.buffer_mut(), area);
 
+    let position_isize = (app.position.0 as isize, app.position.1 as isize);
     let _ = app.fps_counter.render_tick();
 
     Clear.render(info, frame.buffer_mut());
@@ -30,14 +31,14 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         format!("Scale: {:?}", app.map_mode).into(),
         format!(
             "Current biome: {:?}",
-            app.map.get_chunk_from_world_coord(app.position).biome
+            app.map.get_chunk_from_world_coord(position_isize).biome
         )
         .into(),
-        format!("position: {}, {}", app.position.0, app.position.1,).into(),
+        format!("position: {}, {}", position_isize.0, position_isize.1,).into(),
         format!(
             "Chunk pos: {}, {}",
-            app.map.chunk_coord_from_world_coord(app.position).0,
-            app.map.chunk_coord_from_world_coord(app.position).1,
+            app.map.chunk_coord_from_world_coord(position_isize).0,
+            app.map.chunk_coord_from_world_coord(position_isize).1,
         )
         .into(),
         format!("Generated Chunks: {}", app.map.generated_chunk_count()).into(),
@@ -61,7 +62,9 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
 
     for x in (0..(area.width - area.x) as isize).step_by(2) {
         for y in 0..(area.height - area.y) as isize {
-            let chunk_coord = app.map.chunk_coord_from_world_coord(app.position);
+            let chunk_coord = app
+                .map
+                .chunk_coord_from_world_coord((app.position.0 as isize, app.position.1 as isize));
             let x_map = chunk_coord.0 + x / 2 - quarter_width;
 
             let y_map = chunk_coord.1 - y + half_height;
