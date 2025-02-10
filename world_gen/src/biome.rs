@@ -61,10 +61,10 @@ impl BiomeSettings {
         };
 
         let continentalness = match continentalness {
-            -2.0..=-0.8 => ContinentalnessLevel::DeepWater,
-            -0.8..=0.0 => ContinentalnessLevel::ShallowWater,
-            0.0..=0.4 => ContinentalnessLevel::Beach,
-            0.4..=0.8 => ContinentalnessLevel::Land,
+            -2.0..=-0.3 => ContinentalnessLevel::DeepWater,
+            -0.3..=0.0 => ContinentalnessLevel::ShallowWater,
+            0.0..=0.3 => ContinentalnessLevel::Beach,
+            0.3..=0.8 => ContinentalnessLevel::Land,
             _ => ContinentalnessLevel::Farland,
         };
 
