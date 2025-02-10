@@ -41,8 +41,7 @@ I wanted to make a simple game where NPCs are played by LLMs. Then I needed a ma
 ## Checklist
 
 - [x] Procedural biome generation
-      ![image](https://github.com/user-attachments/assets/6fad0a7a-7ad6-453b-84fe-64065788feb5)
-
+  [![asciicast](https://asciinema.org/a/4OXnofqoeCJCmHfLWLziuXIij.svg)](https://asciinema.org/a/4OXnofqoeCJCmHfLWLziuXIij)
 - [ ] Terrain generation
 - [ ] Procedural city generation (don't know how to place cities yet)
 - [ ] LLM backed NPCs
