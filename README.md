@@ -16,19 +16,38 @@ I wanted to make a simple game where NPCs are played by LLMs. Then I needed a ma
 
   Chunks are generated as the player moves
 
-- `game_core` is the world generation at the moment
-- `perlin_to_image` is a simple script to generate a perlin noise image
+- `world_gen` is the world generation crate
+    It also provides a binary that generates images for different parameters of the biome generation as well as the biome map.
+  
+    In order:
+  - Biome map
+  - Temeprature
+  - Moisture
+  - Continentalness
+  - Erosion
+  
+  ![biome_map](https://github.com/user-attachments/assets/a00b0484-7f2e-4b1c-8846-5725c100dbba)
+  ![temperature_map](https://github.com/user-attachments/assets/7f614520-7a04-44e3-a577-8d0038276083)
+  ![moisture_map](https://github.com/user-attachments/assets/87f5e2c4-0b58-4585-9965-cc97255a1410)
+  ![continentalness_map](https://github.com/user-attachments/assets/d26e7472-dce3-4b6c-a767-ae6a96f8cf26)
+  ![erosion_map](https://github.com/user-attachments/assets/2fb3c164-c423-47a4-abac-9a95679ffcc4)
+  
+  
+
+
+
+
+
+  Start with `cargo run -r -p world_gen`
+  
+- `game_core` is the core logic, provides the `Map` type.
 - `llm_backend` is the bridge to LLM APIs
 
 ## Checklist
 
-- [x] Procedural terrain generation
-      ![image](https://github.com/user-attachments/assets/3b5ce26d-b6c2-4f03-8bd0-8db0a97d3bb0)
+- [x] Procedural biome generation
+  ![image](https://github.com/user-attachments/assets/6fad0a7a-7ad6-453b-84fe-64065788feb5)
 
-- [x] Temperature based on latitude (with smaller variation based on local height)
-      ![image](https://github.com/user-attachments/assets/b2e9498e-01fe-4b07-88a4-9e8b7a7b8518)
-      ![image](https://github.com/user-attachments/assets/15c77c63-5455-4681-8d19-ec372c76c55d)
-
-- [ ] Procedural biome generation (most likely based on voronoi diagrams)
+- [ ] Terrain generation
 - [ ] Procedural city generation (don't know how to place cities yet)
 - [ ] LLM backed NPCs
