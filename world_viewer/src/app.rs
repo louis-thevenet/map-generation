@@ -22,9 +22,9 @@ pub enum VisualizationMode {
 /// Application.
 #[derive(Debug)]
 pub struct App {
-    /// Is the application running?
     pub running: bool,
     pub map_mode: MapMode,
+    pub current_scale: f64,
     pub position: (isize, isize),
     pub map: Map,
     pub fps_counter: FpsCounter,
@@ -34,7 +34,8 @@ impl Default for App {
     fn default() -> Self {
         Self {
             running: true,
-            map: Map::new(16.0),
+            current_scale: 1.0,
+            map: Map::new(1.0),
             position: (0, 0),
             map_mode: MapMode::Global,
             fps_counter: FpsCounter::new(),

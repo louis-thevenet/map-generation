@@ -13,7 +13,7 @@ impl Vector2 {
         self.0.mul_add(rhs.0, self.1 * rhs.1)
     }
 }
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct PerlinNoiseGenerator {
     scale: f64,
 
@@ -49,8 +49,11 @@ impl PerlinNoiseGenerator {
         Self { octaves, ..self }
     }
     #[must_use]
-    pub fn set_scale(self, scale: f64) -> Self {
-        Self { scale, ..self }
+    pub fn set_scale(&self, scale: f64) -> Self {
+        Self {
+            scale,
+            ..self.clone()
+        }
     }
     const fn constant_vector(h: usize) -> Vector2 {
         match h % 4 {

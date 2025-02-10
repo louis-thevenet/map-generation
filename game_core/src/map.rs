@@ -8,20 +8,18 @@ pub struct Map {
     chunks: HashMap<(isize, isize), Chunk>,
 }
 
-impl Default for Map {
-    fn default() -> Self {
+impl Map {
+    #[must_use]
+    pub fn new(global_scale: f64) -> Self {
         Self {
-            generator: WorldGen::new(None),
+            generator: WorldGen::new(global_scale, None),
             chunks: HashMap::new(),
         }
     }
-}
-impl Map {
-    #[must_use]
-    pub fn new(terrain_scale: f64) -> Self {
-        let mut res = Self::default();
-        // res.generator = res.generator.set_terrain_scale(terrain_scale);
-        res
+
+    pub fn update_scale(&mut self, global_scale: f64) {
+        self.chunks.clear();
+        self.generator.update_scale(global_scale);
     }
     /// Get a reference to a `Chunk` from its coordinates.
     ///

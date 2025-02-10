@@ -8,7 +8,7 @@ pub mod chunk;
 mod perlin_noise;
 mod vector;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 pub struct WorldGen {
     pub chunk_size: isize,
@@ -18,15 +18,9 @@ pub struct WorldGen {
     erosion_noise: PerlinNoiseGenerator,
 }
 
-impl Default for WorldGen {
-    fn default() -> Self {
-        Self::new(None)
-    }
-}
-
 impl WorldGen {
     #[must_use]
-    pub fn new(seed_opt: Option<u64>) -> Self {
+    pub fn new(global_scale: f64, seed_opt: Option<u64>) -> Self {
         let seed = if let Some(seed_value) = seed_opt {
             seed_value
         } else {
@@ -34,29 +28,40 @@ impl WorldGen {
             println!("Seed: {seed_value}");
             seed_value
         };
+
+        let temp_scale = global_scale * 64.;
+        let moisture_scale = global_scale * 64.;
+        let continentalness_scale = global_scale * 64.;
+        let erosion_scale = global_scale * 16.;
         Self {
             chunk_size: 32,
             temperature_noise: PerlinNoiseGenerator::new(seed)
-                .set_scale(64.)
+                .set_scale(temp_scale)
                 .set_lacunarity(1.3)
                 .set_persistance(0.5)
                 .set_octaves(4),
             moisture_noise: PerlinNoiseGenerator::new(seed + 2)
-                .set_scale(64.)
+                .set_scale(moisture_scale)
                 .set_lacunarity(1.3)
                 .set_persistance(0.5)
                 .set_octaves(4),
             continentalness_noise: PerlinNoiseGenerator::new(seed + 4)
-                .set_scale(16.)
+                .set_scale(continentalness_scale)
                 .set_lacunarity(1.7)
                 .set_persistance(0.6)
                 .set_octaves(8),
             erosion_noise: PerlinNoiseGenerator::new(seed + 8)
-                .set_scale(16.)
+                .set_scale(erosion_scale)
                 .set_lacunarity(2.0)
                 .set_persistance(0.5)
                 .set_octaves(8),
         }
+    }
+    pub fn update_scale(&mut self, global_scale: f64) {
+        self.temperature_noise = self.temperature_noise.set_scale(global_scale * 64.);
+        self.moisture_noise = self.moisture_noise.set_scale(global_scale * 64.);
+        self.continentalness_noise = self.continentalness_noise.set_scale(global_scale * 64.);
+        self.erosion_noise = self.erosion_noise.set_scale(global_scale * 16.);
     }
 
     /// Generates a chunk from its coordinates.
