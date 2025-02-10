@@ -87,12 +87,17 @@ fn main() {
     } else {
         1024
     };
+    let scale: f64 = if args.len() > 2 {
+        args[2].parse().unwrap()
+    } else {
+        1.0
+    };
 
     let height = width;
     let mut progress_bar = mapping::Bar::with_range(0, height * width).timed();
     progress_bar.set_len(20);
 
-    let world_gen = WorldGen::default();
+    let world_gen = WorldGen::new(scale, None);
     let chunks = (-width / 2..width / 2)
         .map(|x| {
             progress_bar.set((x + width / 2) * height);
