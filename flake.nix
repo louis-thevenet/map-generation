@@ -78,6 +78,9 @@
           };
           pre-commit = {
             settings = {
+              settings.rust.check.cargoDeps = pkgs.rustPlatform.importCargoLock {
+                lockFile = ./Cargo.lock;
+              };
               hooks = {
                 deadnix.enable = true;
                 statix.enable = true;
@@ -85,11 +88,17 @@
                 rustfmt.enable = true;
                 check-toml.enable = true;
                 taplo.enable = true;
-                clippy.enable = true;
+                clippy = {
+                  enable = true;
+                  packageOverrides.cargo = pkgs.cargo;
+                  packageOverrides.clippy = pkgs.clippy;
+                  settings.allFeatures = true;
+                  settings.offline = false;
+                };
               };
             };
-          };
 
+          };
         };
     };
 }
