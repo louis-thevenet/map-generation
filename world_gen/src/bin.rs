@@ -22,25 +22,25 @@ pub fn draw_rect(
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn save_maps(size: (u32, u32), chunks: &[Vec<Cell>]) {
+fn save_maps(size: (u32, u32), cells: &[Vec<Cell>]) {
     let mut temp_img = ImageBuffer::new(size.0, size.1);
     let mut moisture_img = ImageBuffer::new(size.0, size.1);
     let mut continentalness_img = ImageBuffer::new(size.0, size.1);
     let mut erosion_img = ImageBuffer::new(size.0, size.1);
 
-    for (x, chunk_row) in chunks.iter().enumerate() {
-        for (y, chunk) in chunk_row.iter().rev().enumerate() {
-            let temp_color = (255. * (chunk.temp + 1.) / 2.) as u8;
+    for (x, cell_row) in cells.iter().enumerate() {
+        for (y, cell) in cell_row.iter().rev().enumerate() {
+            let temp_color = (255. * (cell.temp + 1.) / 2.) as u8;
             // warm = red, cold = blue
             let color = Rgb([temp_color, 0, 255 - temp_color]);
             temp_img.put_pixel(x as u32, y as u32, color);
 
-            let moisture_color = (255. * (chunk.moisture + 1.) / 2.) as u8;
+            let moisture_color = (255. * (cell.moisture + 1.) / 2.) as u8;
             // wet = blue, dry = red
             let color = Rgb([moisture_color, 0, 255 - moisture_color]);
             moisture_img.put_pixel(x as u32, y as u32, color);
 
-            let continentalness_color = (255. * (chunk.continentalness + 1.) / 2.) as u8;
+            let continentalness_color = (255. * (cell.continentalness + 1.) / 2.) as u8;
             // black = terrain, white = ocean
             let color = Rgb([
                 continentalness_color,
@@ -49,7 +49,7 @@ fn save_maps(size: (u32, u32), chunks: &[Vec<Cell>]) {
             ]);
             continentalness_img.put_pixel(x as u32, y as u32, color);
 
-            let erosion_color = (255. * (chunk.erosion + 1.) / 2.) as u8;
+            let erosion_color = (255. * (cell.erosion + 1.) / 2.) as u8;
             // white = high erosion, black = low erosion
 
             let color = Rgb([erosion_color, erosion_color, erosion_color]);
@@ -65,10 +65,10 @@ fn save_maps(size: (u32, u32), chunks: &[Vec<Cell>]) {
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn save_biome_map(biome_img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, chunks: &[Vec<Cell>]) {
-    for (x, chunk_row) in chunks.iter().enumerate() {
-        for (y, chunk) in chunk_row.iter().rev().enumerate() {
-            let color = Rgb(chunk.biome.color());
+fn save_biome_map(biome_img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, cells: &[Vec<Cell>]) {
+    for (x, cell_row) in cells.iter().enumerate() {
+        for (y, cell) in cell_row.iter().rev().enumerate() {
+            let color = Rgb(cell.biome.color());
             biome_img.put_pixel(x as u32, y as u32, color);
         }
     }
@@ -93,23 +93,23 @@ fn main() {
     progress_bar.set_len(20);
 
     let world_gen = WorldGen::new(scale, None);
-    let chunks = (-width / 2..width / 2)
+    let cells = (-width / 2..width / 2)
         .map(|x| {
             progress_bar.set((x + width / 2) * height);
 
             print!("\r{progress_bar}");
             (-height / 2..height / 2)
-                .map(|y| world_gen.generate_chunk((x.try_into().unwrap(), y.try_into().unwrap())))
+                .map(|y| world_gen.generate_cell((x.try_into().unwrap(), y.try_into().unwrap())))
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
 
     // Noise maps
-    save_maps((width as u32, height as u32), &chunks);
+    save_maps((width as u32, height as u32), &cells);
 
     // Biome map
     let mut biome_img = ImageBuffer::new(width as u32, height as u32);
-    save_biome_map(&mut biome_img, &chunks);
+    save_biome_map(&mut biome_img, &cells);
     draw_rect(
         &mut biome_img,
         (width as u32 / 2 - 1, height as u32 / 2 - 1),

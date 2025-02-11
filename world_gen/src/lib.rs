@@ -11,7 +11,7 @@ mod vector;
 #[derive(Debug, Clone)]
 
 pub struct WorldGen {
-    pub chunk_size: isize,
+    pub seed: u64,
     temperature_noise: PerlinNoiseGenerator,
     moisture_noise: PerlinNoiseGenerator,
     continentalness_noise: PerlinNoiseGenerator,
@@ -34,7 +34,7 @@ impl WorldGen {
         let continentalness_scale = global_scale * 64.;
         let erosion_scale = global_scale * 16.;
         Self {
-            chunk_size: 32,
+            seed,
             temperature_noise: PerlinNoiseGenerator::new(seed)
                 .set_scale(temp_scale)
                 .set_lacunarity(1.3)
@@ -64,14 +64,9 @@ impl WorldGen {
         self.erosion_noise = self.erosion_noise.set_scale(global_scale * 16.);
     }
 
-    /// Generates a chunk from its coordinates.
-    /// Chunk dimension are
-    /// (pos.0, pos.1)                 ...   (pos.0 + `chunk_size`, pos.1)
-    ///                                ...
-    /// (pos.0, pos.1 + `chunk_size`)  ...   (pos.0 + `chunk_size`, pos.1 `chunk_size`ze)
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
-    pub fn generate_chunk(&self, pos: (isize, isize)) -> Cell {
+    pub fn generate_cell(&self, pos: (isize, isize)) -> Cell {
         let pos = (pos.0 as f64, pos.1 as f64);
 
         let temp = self.temperature_noise.noise(pos);

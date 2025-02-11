@@ -11,7 +11,7 @@ I wanted to make a simple game where NPCs are played by LLMs. Then I needed a ma
   Keys:
 
   - arrow keys to move
-  - tab to switch between local and global view (view chunks or cells)
+  - enter/backspace to zoom in/out
   - ctrl will speed up movement
 
   Chunks are generated as the player moves
@@ -41,7 +41,7 @@ I wanted to make a simple game where NPCs are played by LLMs. Then I needed a ma
 ## Checklist
 
 - [x] Procedural biome generation
-  [![asciicast](https://asciinema.org/a/4OXnofqoeCJCmHfLWLziuXIij.svg)](https://asciinema.org/a/4OXnofqoeCJCmHfLWLziuXIij)
+      [![asciicast](https://asciinema.org/a/4OXnofqoeCJCmHfLWLziuXIij.svg)](https://asciinema.org/a/4OXnofqoeCJCmHfLWLziuXIij)
 - [ ] Terrain generation
 - [ ] Procedural city generation (don't know how to place cities yet)
 - [ ] LLM backed NPCs

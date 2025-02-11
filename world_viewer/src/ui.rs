@@ -8,14 +8,14 @@ use ratatui::{
 };
 
 /// Renders the user interface widgets.
+#[allow(clippy::cast_possible_truncation)]
 pub fn render(app: &mut App, frame: &mut Frame) {
     let area = frame.area();
 
     let [info, _] = Layout::horizontal(Constraint::from_percentages([15, 100 - 15])).areas(area);
-    let [fps, info] = Layout::vertical(Constraint::from_lengths([1 + 2, 5 + 2])).areas(info);
+    let [fps, info] = Layout::vertical(Constraint::from_lengths([1 + 2, 4 + 2])).areas(info);
     draw_map(app, frame.buffer_mut(), area);
 
-    let position_isize = (app.position.0 as isize, app.position.1 as isize);
     let _ = app.fps_counter.render_tick();
 
     Clear.render(info, frame.buffer_mut());
@@ -27,21 +27,15 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         .block(Block::bordered())
         .render(fps, frame.buffer_mut());
 
+    let real_position = (
+        (app.position.0 / app.current_scale) as isize,
+        (app.position.1 / app.current_scale) as isize,
+    );
     Paragraph::new(vec![
-        format!("Scale: {:?}", app.map_mode).into(),
-        format!(
-            "Current biome: {:?}",
-            app.map.get_chunk_from_world_coord(position_isize).biome
-        )
-        .into(),
-        format!("position: {}, {}", position_isize.0, position_isize.1,).into(),
-        format!(
-            "Chunk pos: {}, {}",
-            app.map.chunk_coord_from_world_coord(position_isize).0,
-            app.map.chunk_coord_from_world_coord(position_isize).1,
-        )
-        .into(),
-        format!("Generated Chunks: {}", app.map.generated_chunk_count()).into(),
+        format!("Seed: {}", app.map.seed()).into(),
+        format!("Current biome: {:?}", app.map.get_cell(real_position).biome).into(),
+        format!("position: {}, {}", real_position.0, real_position.1,).into(),
+        format!("Scale: {:.2}", app.current_scale).into(),
     ])
     .left_aligned()
     .style(Style::reset())
@@ -62,22 +56,19 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
 
     for x in (0..(area.width - area.x) as isize).step_by(2) {
         for y in 0..(area.height - area.y) as isize {
-            let chunk_coord = app
-                .map
-                .chunk_coord_from_world_coord((app.position.0 as isize, app.position.1 as isize));
-            let x_map = chunk_coord.0 + x / 2 - quarter_width;
+            let x_map = (app.position.0) as isize + x / 2 - quarter_width;
+            let y_map = (app.position.1) as isize - y + half_height;
 
-            let y_map = chunk_coord.1 - y + half_height;
-
-            let chunk = &app.map.get_chunk_from_chunk_coord((x_map, y_map));
-            let (symbol, style) = if (x_map, y_map) == chunk_coord {
-                ("@", Style::new().fg(ratatui::style::Color::Red))
+            let cell = &app.map.get_cell((x_map, y_map));
+            let color = cell.biome.color();
+            let mut style =
+                Style::new().bg(ratatui::style::Color::Rgb(color[0], color[1], color[2]));
+            let symbol = if (x_map, y_map) == ((app.position.0) as isize, (app.position.1) as isize)
+            {
+                style = style.fg(ratatui::style::Color::Red);
+                "@"
             } else {
-                let color = chunk.biome.color();
-                (
-                    " ",
-                    Style::new().bg(ratatui::style::Color::Rgb(color[0], color[1], color[2])),
-                )
+                " "
             };
 
             let cell = buf.cell_mut(Position::new(x as u16 + area.x, y as u16 + area.y));

@@ -23,6 +23,7 @@ pub enum VisualizationMode {
 #[derive(Debug)]
 pub struct App {
     pub running: bool,
+    /// Not used at the moment.
     pub map_mode: MapMode,
     pub current_scale: f64,
     pub position: (f64, f64),
@@ -37,7 +38,7 @@ impl Default for App {
             current_scale: 1.0,
             map: Map::new(1.0),
             position: (0., 0.),
-            map_mode: MapMode::Global,
+            map_mode: MapMode::Local,
             fps_counter: FpsCounter::new(),
         }
     }
