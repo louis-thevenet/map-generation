@@ -4,7 +4,6 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
     git-hooks-nix.url = "github:cachix/git-hooks.nix";
-    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   outputs =
@@ -12,7 +11,6 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
       imports = [
-        inputs.treefmt-nix.flakeModule
         inputs.git-hooks-nix.flakeModule
       ];
       perSystem =
@@ -41,7 +39,7 @@
         in
         rec {
           # Rust package
-          packages.world_viewer =
+          packages.world-viewer =
             let
               cargoToml = builtins.fromTOML (builtins.readFile ./world_viewer/Cargo.toml);
             in
@@ -51,8 +49,8 @@
               cargoLock.lockFile = ./Cargo.lock;
               cargoBuildFlags = "-p " + name;
             };
-          packages.default = packages.world_viewer;
-          packages.perlin_image =
+          packages.default = packages.world-viewer;
+          packages.world-gen =
             let
               cargoToml = builtins.fromTOML (builtins.readFile ./world_gen/Cargo.toml);
             in
@@ -66,9 +64,6 @@
 
           # Rust dev environment
           devShells.default = pkgs.mkShell {
-            inputsFrom = [
-              config.treefmt.build.devShell
-            ];
             RUST_BACKTRACE = "full";
             RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
             shellHook = ''
@@ -95,14 +90,6 @@
             };
           };
 
-          treefmt.config = {
-            projectRootFile = "flake.nix";
-            programs = {
-              nixpkgs-fmt.enable = true;
-              rustfmt.enable = true;
-              toml-sort.enable = true;
-            };
-          };
         };
     };
 }
