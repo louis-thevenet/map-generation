@@ -3,17 +3,17 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     systems.url = "github:nix-systems/default";
-
-    # Dev tools
+    git-hooks-nix.url = "github:cachix/git-hooks.nix";
     treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   outputs =
-    inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
       imports = [
         inputs.treefmt-nix.flakeModule
+        inputs.git-hooks-nix.flakeModule
       ];
       perSystem =
         {
@@ -54,7 +54,7 @@
           packages.default = packages.world_viewer;
           packages.perlin_image =
             let
-              cargoToml = builtins.fromTOML (builtins.readFile ./perlin_to_image/Cargo.toml);
+              cargoToml = builtins.fromTOML (builtins.readFile ./world_gen/Cargo.toml);
             in
             pkgs.rustPlatform.buildRustPackage rec {
               inherit (cargoToml.package) name version;
@@ -71,16 +71,30 @@
             ];
             RUST_BACKTRACE = "full";
             RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
-
+            shellHook = ''
+              ${config.pre-commit.installationScript}
+              echo 1>&2 "Welcome to the development shell!"
+            '';
             packages = [
               rust-toolchain
               pkgs.clippy
               pkgs.hyperfine
             ];
           };
+          pre-commit = {
+            settings = {
+              hooks = {
+                deadnix.enable = true;
+                statix.enable = true;
+                actionlint.enable = true;
+                rustfmt.enable = true;
+                check-toml.enable = true;
+                taplo.enable = true;
+                clippy.enable = true;
+              };
+            };
+          };
 
-          # Add your auto-formatters here.
-          # cf. https://numtide.github.io/treefmt/
           treefmt.config = {
             projectRootFile = "flake.nix";
             programs = {

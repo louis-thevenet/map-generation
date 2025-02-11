@@ -1,8 +1,3 @@
-[package]
-name = "game_core"
-version = "0.1.0"
-edition = "2021"
-
 [dependencies]
 world_gen = { path = "../world_gen" }
 rand = "0.8.5"
@@ -11,3 +6,8 @@ rayon = "1.10.0"
 strum = "0.26.3"
 strum_macros = "0.26.4"
 tracing = "0.1.41"
+
+[package]
+name = "game_core"
+version = "0.1.0"
+edition = "2021"
