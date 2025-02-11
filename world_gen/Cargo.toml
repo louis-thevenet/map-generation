@@ -1,5 +1,5 @@
 [[bin]]
-name = "perlin_viewer"
+name = "world_gen"
 path = "src/bin.rs"
 
 [dependencies]
