@@ -3,8 +3,6 @@ use rand_chacha::ChaCha8Rng;
 
 /// Offset used to handle negative positions
 const POS_OFFSET: f64 = 1024.0;
-/// So that 1.0 is a good scale.
-const DEFAULT_SCALE: f64 = 1.0;
 /// Length of the permutation vector. We should't see repetition before >~20k pixels.
 const PERMUTATION_LENGTH: usize = 1024 * 16;
 pub struct Vector2(f64, f64);

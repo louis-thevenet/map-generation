@@ -1,17 +1,9 @@
 use std::env;
 
 use image::{ImageBuffer, Rgb};
-use progressing::{clamping, mapping, Baring};
-use world_gen::{chunk::Chunk, WorldGen};
+use progressing::{mapping, Baring};
+use world_gen::{cell::Cell, WorldGen};
 
-// pub fn draw_grid(img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, cell_size: u32) {
-//     const BLACK: Rgb<u8> = Rgb([0, 0, 0]);
-//     img.par_enumerate_pixels_mut().for_each(|(x, y, p)| {
-//         if x % cell_size == 0 || y % cell_size == 0 {
-//             *p = BLACK;
-//         }
-//     });
-// }
 pub fn draw_rect(
     img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>,
     pos: (u32, u32),
@@ -28,7 +20,9 @@ pub fn draw_rect(
         *img.get_pixel_mut(pos.0 + width, pos.1 + y) = color;
     }
 }
-fn save_maps(size: (u32, u32), chunks: &[Vec<Chunk>]) {
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn save_maps(size: (u32, u32), chunks: &[Vec<Cell>]) {
     let mut temp_img = ImageBuffer::new(size.0, size.1);
     let mut moisture_img = ImageBuffer::new(size.0, size.1);
     let mut continentalness_img = ImageBuffer::new(size.0, size.1);
@@ -70,7 +64,8 @@ fn save_maps(size: (u32, u32), chunks: &[Vec<Chunk>]) {
     erosion_img.save("erosion_map.png").unwrap();
 }
 
-fn save_biome_map(biome_img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, chunks: &[Vec<Chunk>]) {
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn save_biome_map(biome_img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, chunks: &[Vec<Cell>]) {
     for (x, chunk_row) in chunks.iter().enumerate() {
         for (y, chunk) in chunk_row.iter().rev().enumerate() {
             let color = Rgb(chunk.biome.color());
@@ -102,12 +97,17 @@ fn main() {
         .map(|x| {
             progress_bar.set((x + width / 2) * height);
 
-            print!("\r{}", progress_bar);
+            print!("\r{progress_bar}");
             (-height / 2..height / 2)
                 .map(|y| world_gen.generate_chunk((x.try_into().unwrap(), y.try_into().unwrap())))
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
+
+    // Noise maps
+    save_maps((width as u32, height as u32), &chunks);
+
+    // Biome map
     let mut biome_img = ImageBuffer::new(width as u32, height as u32);
     save_biome_map(&mut biome_img, &chunks);
     draw_rect(

@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use world_gen::{chunk::Chunk, WorldGen};
+use world_gen::{cell::Cell, WorldGen};
 
 #[derive(Debug)]
 pub struct Map {
     generator: WorldGen,
-    chunks: HashMap<(isize, isize), Chunk>,
+    chunks: HashMap<(isize, isize), Cell>,
 }
 
 impl Map {
@@ -26,7 +26,7 @@ impl Map {
     /// # Panics
     ///
     /// Shouldn't panic but clippy is screaming at me.
-    pub fn get_chunk_from_chunk_coord(&mut self, pos: (isize, isize)) -> &Chunk {
+    pub fn get_chunk_from_chunk_coord(&mut self, pos: (isize, isize)) -> &Cell {
         if let std::collections::hash_map::Entry::Vacant(e) = self.chunks.entry(pos) {
             e.insert(self.generator.generate_chunk(pos));
             self.get_chunk_from_chunk_coord(pos)
@@ -34,7 +34,7 @@ impl Map {
             self.chunks.get(&pos).unwrap()
         }
     }
-    pub fn get_chunk_from_world_coord(&mut self, position: (isize, isize)) -> &Chunk {
+    pub fn get_chunk_from_world_coord(&mut self, position: (isize, isize)) -> &Cell {
         self.get_chunk_from_chunk_coord(self.chunk_coord_from_world_coord(position))
     }
     #[must_use]

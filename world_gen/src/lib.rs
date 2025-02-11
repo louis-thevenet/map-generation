@@ -1,10 +1,10 @@
 use biome::BiomeSettings;
-use chunk::Chunk;
+use cell::Cell;
 use perlin_noise::PerlinNoiseGenerator;
 use rand::{thread_rng, RngCore};
 
 mod biome;
-pub mod chunk;
+pub mod cell;
 mod perlin_noise;
 mod vector;
 
@@ -71,7 +71,7 @@ impl WorldGen {
     /// (pos.0, pos.1 + `chunk_size`)  ...   (pos.0 + `chunk_size`, pos.1 `chunk_size`ze)
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
-    pub fn generate_chunk(&self, pos: (isize, isize)) -> Chunk {
+    pub fn generate_chunk(&self, pos: (isize, isize)) -> Cell {
         let pos = (pos.0 as f64, pos.1 as f64);
 
         let temp = self.temperature_noise.noise(pos);
@@ -79,7 +79,7 @@ impl WorldGen {
         let continentalness = self.continentalness_noise.noise(pos);
         let erosion = self.erosion_noise.noise(pos);
 
-        Chunk {
+        Cell {
             temp,
             moisture,
             continentalness,

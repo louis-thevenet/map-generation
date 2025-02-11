@@ -121,7 +121,7 @@ impl From<BiomeSettings> for IntermediateBiomeType {
             ContinentalnessLevel::Land => match settings.erosion {
                 ErosionLevel::Flat | ErosionLevel::SlightHills => IntermediateBiomeType::Plain,
                 ErosionLevel::Hills => IntermediateBiomeType::Hills,
-                ErosionLevel::Mountains => IntermediateBiomeType::HighMountains,
+                ErosionLevel::Mountains => IntermediateBiomeType::Mountains,
             },
             ContinentalnessLevel::Farland => match settings.erosion {
                 ErosionLevel::Flat | ErosionLevel::SlightHills => IntermediateBiomeType::Plain,

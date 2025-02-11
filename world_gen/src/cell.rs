@@ -1,7 +1,7 @@
 use crate::biome::BiomeType;
 
 #[derive(Debug, Clone)]
-pub struct Chunk {
+pub struct Cell {
     pub temp: f64,
     pub moisture: f64,
     pub continentalness: f64,
