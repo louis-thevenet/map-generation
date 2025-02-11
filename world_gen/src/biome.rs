@@ -45,10 +45,10 @@ impl BiomeSettings {
     pub fn new(temp: f64, moisture: f64, continentalness: f64, erosion: f64) -> Self {
         // -2 is a temp fix because the noise generator can generate values outside [-1,1]
         let temperature = match temp {
-            -2.0..=-0.8 => TemperatureLevel::Freezing,
-            -0.8..=-0.4 => TemperatureLevel::Cold,
-            -0.4..=0.4 => TemperatureLevel::Temperate,
-            0.4..=0.8 => TemperatureLevel::Warm,
+            -2.0..=-0.6 => TemperatureLevel::Freezing,
+            -0.6..=-0.3 => TemperatureLevel::Cold,
+            -0.3..=0.3 => TemperatureLevel::Temperate,
+            0.3..=0.6 => TemperatureLevel::Warm,
             _ => TemperatureLevel::Hot,
         };
 
