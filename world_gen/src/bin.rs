@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, io};
 
 use image::{ImageBuffer, Rgb};
 use progressing::{mapping, Baring};
@@ -58,10 +58,12 @@ fn save_maps(size: (u32, u32), cells: &[Vec<Cell>]) {
         }
     }
 
-    temp_img.save("temperature_map.png").unwrap();
-    moisture_img.save("moisture_map.png").unwrap();
-    continentalness_img.save("continentalness_map.png").unwrap();
-    erosion_img.save("erosion_map.png").unwrap();
+    temp_img.save("output/temperature_map.png").unwrap();
+    moisture_img.save("output/moisture_map.png").unwrap();
+    continentalness_img
+        .save("output/continentalness_map.png")
+        .unwrap();
+    erosion_img.save("output/erosion_map.png").unwrap();
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -75,8 +77,9 @@ fn save_biome_map(biome_img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, cells: &[Vec<Ce
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn main() {
+fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
+    std::fs::DirBuilder::new().create("./output")?;
     let width: i64 = if args.len() > 1 {
         args[1].parse().unwrap()
     } else {
@@ -117,5 +120,6 @@ fn main() {
         1,
         Rgb([255, 0, 0]),
     );
-    biome_img.save("biome_map.png").unwrap();
+    biome_img.save("output/biome_map.png").unwrap();
+    Ok(())
 }
