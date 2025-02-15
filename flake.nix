@@ -24,6 +24,7 @@
             name = "rust-toolchain";
             paths = with pkgs; [
               rustc
+              rustfmt
               cargo
               cargo-watch
               rust-analyzer
@@ -85,7 +86,13 @@
                 deadnix.enable = true;
                 statix.enable = true;
                 actionlint.enable = true;
-                rustfmt.enable = true;
+                rustfmt = {
+                  enable = true;
+                  packageOverrides = {
+                    inherit (pkgs) cargo;
+                    inherit (pkgs) rustfmt;
+                  };
+                };
                 check-toml.enable = true;
                 taplo.enable = true;
                 typos = {
@@ -96,10 +103,15 @@
                 };
                 clippy = {
                   enable = true;
-                  packageOverrides.cargo = pkgs.cargo;
-                  packageOverrides.clippy = pkgs.clippy;
-                  settings.allFeatures = true;
-                  settings.offline = false;
+                  packageOverrides = {
+                    inherit (pkgs) cargo;
+                    inherit (pkgs) clippy;
+                  };
+                  settings = {
+                    denyWarnings = true;
+                    allFeatures = true;
+                    offline = false;
+                  };
                 };
               };
             };
