@@ -11,7 +11,7 @@ pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 #[derive(Debug, Clone)]
 pub enum MapMode {
     Local,
-    Global,
+    Global(f64),
 }
 #[derive(Debug, Clone)]
 pub enum VisualizationMode {
@@ -23,9 +23,7 @@ pub enum VisualizationMode {
 #[derive(Debug)]
 pub struct App {
     pub running: bool,
-    /// Not used at the moment.
     pub map_mode: MapMode,
-    pub current_scale: f64,
     pub position: (f64, f64),
     pub map: Map,
     pub fps_counter: FpsCounter,
@@ -35,7 +33,6 @@ impl Default for App {
     fn default() -> Self {
         Self {
             running: true,
-            current_scale: 1.0,
             map: Map::new(1.0),
             position: (0., 0.),
             map_mode: MapMode::Local,

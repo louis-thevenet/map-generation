@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::{App, MapMode};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Position, Rect},
@@ -13,7 +13,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     let area = frame.area();
 
     let [info, _] = Layout::horizontal(Constraint::from_percentages([15, 100 - 15])).areas(area);
-    let [fps, info] = Layout::vertical(Constraint::from_lengths([1 + 2, 4 + 2])).areas(info);
+    let [fps, info] = Layout::vertical(Constraint::from_lengths([1 + 2, 6 + 2])).areas(info);
     draw_map(app, frame.buffer_mut(), area);
 
     let _ = app.fps_counter.render_tick();
@@ -27,15 +27,15 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         .block(Block::bordered())
         .render(fps, frame.buffer_mut());
 
-    let real_position = (
-        (app.position.0 / app.current_scale) as isize,
-        (app.position.1 / app.current_scale) as isize,
-    );
+    let position = ((app.position.0) as isize, (app.position.1) as isize);
+    let chunk_position = app.map.chunk_coords_from_world_coords(app.position);
+
     Paragraph::new(vec![
         format!("Seed: {}", app.map.seed()).into(),
-        format!("Current biome: {:?}", app.map.get_cell(real_position).biome).into(),
-        format!("position: {}, {}", real_position.0, real_position.1,).into(),
-        format!("Scale: {:.2}", app.current_scale).into(),
+        format!("Current biome: {:?}", app.map.get_cell(position).biome).into(),
+        format!("Position: {}, {}", position.0, position.1,).into(),
+        format!("Chunk position: {}, {}", chunk_position.0, chunk_position.1,).into(),
+        format!("Scale: {:?}", app.map_mode).into(),
     ])
     .left_aligned()
     .style(Style::reset())
@@ -56,19 +56,43 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
 
     for x in (0..(area.width - area.x) as isize).step_by(2) {
         for y in 0..(area.height - area.y) as isize {
-            let x_map = (app.position.0) as isize + x / 2 - quarter_width;
-            let y_map = (app.position.1) as isize - y + half_height;
+            let (style, symbol) = match app.map_mode {
+                MapMode::Global(s) => {
+                    let x_map = (app.position.0 / s) as isize + x / 2 - quarter_width;
+                    let y_map = (app.position.1 / s) as isize - y + half_height;
 
-            let cell = &app.map.get_cell((x_map, y_map));
-            let color = cell.biome.color();
-            let mut style =
-                Style::new().bg(ratatui::style::Color::Rgb(color[0], color[1], color[2]));
-            let symbol = if (x_map, y_map) == ((app.position.0) as isize, (app.position.1) as isize)
-            {
-                style = style.fg(ratatui::style::Color::Red);
-                "@"
-            } else {
-                " "
+                    let cell = app.map.get_chunk(s, (x_map, y_map)).clone();
+                    let color = cell.biome.color();
+                    let mut style =
+                        Style::new().bg(ratatui::style::Color::Rgb(color[0], color[1], color[2]));
+                    let symbol = if (x_map, y_map)
+                        == ((app.position.0 / s) as isize, (app.position.1 / s) as isize)
+                    {
+                        style = style.fg(ratatui::style::Color::Red);
+                        "@"
+                    } else {
+                        " "
+                    };
+                    (style, symbol)
+                }
+                MapMode::Local => {
+                    let x_map = (app.position.0) as isize + x / 2 - quarter_width;
+                    let y_map = (app.position.1) as isize - y + half_height;
+
+                    let cell = app.map.get_cell((x_map, y_map)).clone();
+                    let color = cell.biome.color();
+                    let mut style =
+                        Style::new().bg(ratatui::style::Color::Rgb(color[0], color[1], color[2]));
+                    let symbol = if (x_map, y_map)
+                        == ((app.position.0) as isize, (app.position.1) as isize)
+                    {
+                        style = style.fg(ratatui::style::Color::Red);
+                        "@"
+                    } else {
+                        " "
+                    };
+                    (style, symbol)
+                }
             };
 
             let cell = buf.cell_mut(Position::new(x as u16 + area.x, y as u16 + area.y));

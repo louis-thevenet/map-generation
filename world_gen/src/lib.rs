@@ -7,7 +7,8 @@ mod biome;
 pub mod cell;
 mod perlin_noise;
 mod vector;
-
+/// So that 1.0 is a good scale
+const GLOBAL_SCALE_FIX: f64 = 30.;
 #[derive(Debug, Clone)]
 
 pub struct WorldGen {
@@ -16,6 +17,10 @@ pub struct WorldGen {
     moisture_noise: PerlinNoiseGenerator,
     continentalness_noise: PerlinNoiseGenerator,
     erosion_noise: PerlinNoiseGenerator,
+    temp_scale: f64,
+    moisture_scale: f64,
+    continentalness_scale: f64,
+    erosion_scale: f64,
 }
 
 impl WorldGen {
@@ -29,50 +34,65 @@ impl WorldGen {
             seed_value
         };
 
-        let temp_scale = global_scale * 64.;
-        let moisture_scale = global_scale * 64.;
-        let continentalness_scale = global_scale * 64.;
-        let erosion_scale = global_scale * 16.;
+        let temp_scale = GLOBAL_SCALE_FIX * global_scale * 64.;
+        let moisture_scale = GLOBAL_SCALE_FIX * global_scale * 64.;
+        let continentalness_scale = GLOBAL_SCALE_FIX * global_scale * 64.;
+        let erosion_scale = GLOBAL_SCALE_FIX * global_scale * 16.;
         Self {
             seed,
             temperature_noise: PerlinNoiseGenerator::new(seed)
-                .set_scale(temp_scale)
                 .set_lacunarity(1.3)
                 .set_persistence(0.5)
                 .set_octaves(4),
+            temp_scale,
             moisture_noise: PerlinNoiseGenerator::new(seed + 2)
-                .set_scale(moisture_scale)
                 .set_lacunarity(1.3)
                 .set_persistence(0.5)
                 .set_octaves(4),
+            moisture_scale,
             continentalness_noise: PerlinNoiseGenerator::new(seed + 4)
-                .set_scale(continentalness_scale)
                 .set_lacunarity(1.7)
                 .set_persistence(0.6)
                 .set_octaves(8),
+            continentalness_scale,
+
             erosion_noise: PerlinNoiseGenerator::new(seed + 8)
-                .set_scale(erosion_scale)
                 .set_lacunarity(2.0)
                 .set_persistence(0.5)
                 .set_octaves(8),
+            erosion_scale,
         }
     }
-    pub fn update_scale(&mut self, global_scale: f64) {
-        self.temperature_noise = self.temperature_noise.set_scale(global_scale * 64.);
-        self.moisture_noise = self.moisture_noise.set_scale(global_scale * 64.);
-        self.continentalness_noise = self.continentalness_noise.set_scale(global_scale * 64.);
-        self.erosion_noise = self.erosion_noise.set_scale(global_scale * 16.);
-    }
-
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
     pub fn generate_cell(&self, pos: (isize, isize)) -> Cell {
         let pos = (pos.0 as f64, pos.1 as f64);
+        let temp = self.temperature_noise.noise(pos, self.temp_scale);
+        let moisture = self.moisture_noise.noise(pos, self.moisture_scale);
+        let continentalness = self
+            .continentalness_noise
+            .noise(pos, self.continentalness_scale);
+        let erosion = self.erosion_noise.noise(pos, self.erosion_scale);
 
-        let temp = self.temperature_noise.noise(pos);
-        let moisture = self.moisture_noise.noise(pos);
-        let continentalness = self.continentalness_noise.noise(pos);
-        let erosion = self.erosion_noise.noise(pos);
+        Cell {
+            temp,
+            moisture,
+            continentalness,
+            erosion,
+            biome: BiomeSettings::new(temp, moisture, continentalness, erosion).into(),
+        }
+    }
+    #[must_use]
+    #[allow(clippy::cast_precision_loss)]
+    pub fn generate_chunk(&self, scale: f64, pos: (isize, isize)) -> Cell {
+        let pos = (pos.0 as f64, pos.1 as f64);
+
+        let temp = self.temperature_noise.noise(pos, self.temp_scale / scale);
+        let moisture = self.moisture_noise.noise(pos, self.moisture_scale / scale);
+        let continentalness = self
+            .continentalness_noise
+            .noise(pos, self.continentalness_scale / scale);
+        let erosion = self.erosion_noise.noise(pos, self.erosion_scale / scale);
 
         Cell {
             temp,

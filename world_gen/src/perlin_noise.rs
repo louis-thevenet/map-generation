@@ -13,8 +13,6 @@ impl Vector2 {
 }
 #[derive(Default, Debug, Clone)]
 pub struct PerlinNoiseGenerator {
-    scale: f64,
-
     permutations: Vec<usize>,
     lacunarity: f64,
     octaves: usize,
@@ -45,13 +43,6 @@ impl PerlinNoiseGenerator {
     #[must_use]
     pub fn set_octaves(self, octaves: usize) -> Self {
         Self { octaves, ..self }
-    }
-    #[must_use]
-    pub fn set_scale(&self, scale: f64) -> Self {
-        Self {
-            scale,
-            ..self.clone()
-        }
     }
     const fn constant_vector(h: usize) -> Vector2 {
         match h % 4 {
@@ -101,23 +92,22 @@ impl PerlinNoiseGenerator {
 
         Self::lerp(u, Self::lerp(v, d_bl, d_tl), Self::lerp(v, d_br, d_tr))
     }
-    fn fractal_brownian_motion(&self, pos: (f64, f64)) -> f64 {
+    fn fractal_brownian_motion(&self, pos: (f64, f64), scale: f64) -> f64 {
         let mut result = 0.0;
         for oct in 0..self.octaves {
             let freq = self.lacunarity.powi(oct.try_into().unwrap());
             let amplitude = self.persistence.powi(oct.try_into().unwrap());
-            result +=
-                amplitude * self.perlin((pos.0 * freq / self.scale, pos.1 * freq / self.scale));
+            result += amplitude * self.perlin((pos.0 * freq / scale, pos.1 * freq / scale));
         }
         result
     }
     #[must_use]
     /// Generate noise from coordinates.
-    pub fn noise(&self, pos: (f64, f64)) -> f64 {
+    pub fn noise(&self, pos: (f64, f64), scale: f64) -> f64 {
         if self.octaves == 0 {
             self.perlin(pos)
         } else {
-            self.fractal_brownian_motion(pos)
+            self.fractal_brownian_motion(pos, scale)
         }
     }
 }

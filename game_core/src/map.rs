@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 
 use world_gen::{cell::Cell, WorldGen};
+pub const CHUNK_SIZE: f64 = 16.;
 
 #[derive(Debug)]
 pub struct Map {
+    /// The world generator.
     generator: WorldGen,
+    /// The generated cells.
     cells: HashMap<(isize, isize), Cell>,
 }
 
@@ -21,11 +24,25 @@ impl Map {
         self.generator.seed
     }
 
-    pub fn update_scale(&mut self, global_scale: f64) {
-        self.cells.clear();
-        self.generator.update_scale(global_scale);
+    /// Get chunk coordinates from world coordinates.
+    #[must_use]
+    pub fn chunk_coords_from_world_coords(&self, position: (f64, f64)) -> (f64, f64) {
+        let chunk_size = CHUNK_SIZE;
+        let x = if position.0 >= 0. {
+            position.0 / chunk_size
+        } else {
+            (position.0 + 1.) / chunk_size - 1.
+        };
+        let y = if position.1 >= 0. {
+            position.1 / chunk_size
+        } else {
+            (position.1 + 1.) / chunk_size - 1.
+        };
+        (x, y)
     }
+
     /// Get a reference to a `Cell` from its coordinates.
+    /// If the cell is not generated, it will be generated and cached.
     ///
     /// # Panics
     ///
@@ -38,11 +55,19 @@ impl Map {
             self.cells.get(&pos).unwrap()
         }
     }
+    /// Same as `get_cell` but taskes a scale parameter to control the level of detail.
+    /// Will not cache the result.
+    pub fn get_chunk(&mut self, scale: f64, pos: (isize, isize)) -> Cell {
+        self.generator.generate_chunk(scale, pos)
+    }
+
+    /// Check if a cell has already been generated.
     #[must_use]
     pub fn is_generated(&self, pos: (isize, isize)) -> bool {
         self.cells.contains_key(&pos)
     }
 
+    /// Get the number of cached cells.
     #[must_use]
     pub fn generated_cell_count(&self) -> usize {
         self.cells.len()
