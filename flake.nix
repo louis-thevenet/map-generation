@@ -88,6 +88,12 @@
                 rustfmt.enable = true;
                 check-toml.enable = true;
                 taplo.enable = true;
+                typos = {
+                  enable = true;
+                  settings = {
+                    ignored-words = [ "ratatui" ];
+                  };
+                };
                 clippy = {
                   enable = true;
                   packageOverrides.cargo = pkgs.cargo;
