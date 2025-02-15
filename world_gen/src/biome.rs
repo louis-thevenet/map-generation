@@ -162,7 +162,7 @@ pub enum BiomeType {
     Lake,
     Hills,
     Dunes,
-    Montains,
+    Mountains,
     IceMountains,
 
     // Farland biomes
@@ -196,7 +196,7 @@ impl BiomeType {
             BiomeType::Lake => [71, 211, 255],
             BiomeType::Hills => [73, 196, 143],
             BiomeType::Dunes => [209, 170, 18],
-            BiomeType::Montains => [179, 178, 177],
+            BiomeType::Mountains => [179, 178, 177],
             BiomeType::IceMountains => [234, 239, 240],
 
             BiomeType::Plateau => [179, 197, 201],
@@ -261,7 +261,7 @@ impl From<IntermediateBiome> for BiomeType {
                 TemperatureLevel::Cold
                 | TemperatureLevel::Temperate
                 | TemperatureLevel::Warm
-                | TemperatureLevel::Hot => BiomeType::Montains,
+                | TemperatureLevel::Hot => BiomeType::Mountains,
             },
 
             IntermediateBiomeType::Plateau => BiomeType::Plateau,

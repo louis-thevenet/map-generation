@@ -18,7 +18,7 @@ pub struct PerlinNoiseGenerator {
     permutations: Vec<usize>,
     lacunarity: f64,
     octaves: usize,
-    persistance: f64,
+    persistence: f64,
 }
 impl PerlinNoiseGenerator {
     pub fn new(seed: u64) -> Self {
@@ -36,9 +36,9 @@ impl PerlinNoiseGenerator {
         Self { lacunarity, ..self }
     }
     #[must_use]
-    pub fn set_persistance(self, persistance: f64) -> Self {
+    pub fn set_persistence(self, persistence: f64) -> Self {
         Self {
-            persistance,
+            persistence,
             ..self
         }
     }
@@ -105,7 +105,7 @@ impl PerlinNoiseGenerator {
         let mut result = 0.0;
         for oct in 0..self.octaves {
             let freq = self.lacunarity.powi(oct.try_into().unwrap());
-            let amplitude = self.persistance.powi(oct.try_into().unwrap());
+            let amplitude = self.persistence.powi(oct.try_into().unwrap());
             result +=
                 amplitude * self.perlin((pos.0 * freq / self.scale, pos.1 * freq / self.scale));
         }

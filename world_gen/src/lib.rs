@@ -38,22 +38,22 @@ impl WorldGen {
             temperature_noise: PerlinNoiseGenerator::new(seed)
                 .set_scale(temp_scale)
                 .set_lacunarity(1.3)
-                .set_persistance(0.5)
+                .set_persistence(0.5)
                 .set_octaves(4),
             moisture_noise: PerlinNoiseGenerator::new(seed + 2)
                 .set_scale(moisture_scale)
                 .set_lacunarity(1.3)
-                .set_persistance(0.5)
+                .set_persistence(0.5)
                 .set_octaves(4),
             continentalness_noise: PerlinNoiseGenerator::new(seed + 4)
                 .set_scale(continentalness_scale)
                 .set_lacunarity(1.7)
-                .set_persistance(0.6)
+                .set_persistence(0.6)
                 .set_octaves(8),
             erosion_noise: PerlinNoiseGenerator::new(seed + 8)
                 .set_scale(erosion_scale)
                 .set_lacunarity(2.0)
-                .set_persistance(0.5)
+                .set_persistence(0.5)
                 .set_octaves(8),
         }
     }
