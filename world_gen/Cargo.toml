@@ -1,6 +1,10 @@
 [[bin]]
-name = "world_gen"
-path = "src/bin.rs"
+name = "city_gen"
+path = "src/bin/city_gen.rs"
+
+[[bin]]
+name = "biome_gen"
+path = "src/bin/biome_gen.rs"
 
 [dependencies]
 clap = { version = "4.5.29", features = ["derive"] }

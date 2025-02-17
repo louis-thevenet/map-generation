@@ -1,2 +1,4 @@
 [workspace]
 members = ["world_viewer", "game_core", "llm_backend", "world_gen"]
+
+resolver = "2"

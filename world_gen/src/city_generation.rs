@@ -95,6 +95,7 @@ pub struct CityGenerator {
 }
 
 impl CityGenerator {
+    #[must_use]
     pub fn new(
         width_bound: Range<i32>,
         height_bound: Range<i32>,
@@ -173,7 +174,7 @@ impl CityGenerator {
             let width = thread_rng().gen_range(self.width_bound.clone());
             let height = thread_rng().gen_range(self.height_bound.clone());
 
-            let building = Building::with_random_door(spawn_x, spawn_y, width, height);
+            let new_building = Building::with_random_door(spawn_x, spawn_y, width, height);
 
             // Check overlap
             //
@@ -182,11 +183,11 @@ impl CityGenerator {
             if self
                 .buildings
                 .values()
-                .any(|building| building.overlaps(building, self.distance_bound.start))
+                .any(|building| building.overlaps(&new_building, 3))
             {
                 continue;
             };
-            self.buildings.insert((spawn_x, spawn_y), building);
+            self.buildings.insert((spawn_x, spawn_y), new_building);
             n -= 1;
         }
 
