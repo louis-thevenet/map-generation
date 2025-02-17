@@ -10,15 +10,14 @@ pub fn draw_rect(
     height: u32,
     color: Rgb<u8>,
 ) {
-    for x in 0..width {
+    for x in 0..=width {
         *img.get_pixel_mut(pos.0 + x, pos.1) = color;
         *img.get_pixel_mut(pos.0 + x, pos.1 + height) = color;
     }
-    for y in 0..height {
+    for y in 0..=height {
         *img.get_pixel_mut(pos.0, pos.1 + y) = color;
         *img.get_pixel_mut(pos.0 + width, pos.1 + y) = color;
     }
-    *img.get_pixel_mut(pos.0 + width, pos.1 + height) = color;
 }
 
 // #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -132,10 +131,16 @@ fn main() -> ImageResult<()> {
     } else {
         100
     };
+    let distance_link = if args.len() > 2 {
+        args[2].parse().unwrap()
+    } else {
+        100
+    };
 
-    let mut city_gen = city_generation::City::new(8..30, 8..30, 10..20, width, height);
+    let mut city_gen =
+        city_generation::CityGenerator::new(8..30, 8..30, 20..30, width, height, distance_link);
     city_gen.generate_buildings(n);
-    city_gen.generate_roads();
+    city_gen.generate_roads_astar();
     let mut img = ImageBuffer::new(
         10 + (city_gen.max_x - city_gen.min_x) as u32,
         10 + (city_gen.max_y - city_gen.min_y) as u32,
@@ -146,6 +151,16 @@ fn main() -> ImageResult<()> {
         city_gen.max_y - city_gen.min_y
     );
 
+    // roads
+    for road in &city_gen.roads {
+        for (x, y) in road {
+            img.put_pixel(
+                *x as u32 - city_gen.min_x as u32,
+                *y as u32 - city_gen.min_y as u32,
+                Rgb([0, 255, 0]),
+            );
+        }
+    }
     for building in city_gen.buildings.values() {
         draw_rect(
             &mut img,
@@ -163,21 +178,10 @@ fn main() -> ImageResult<()> {
                 building.door.0 as u32 - city_gen.min_x as u32,
                 building.door.1 as u32 - city_gen.min_y as u32,
             ),
-            1,
-            1,
+            0,
+            0,
             Rgb([255, 0, 0]),
         );
-    }
-
-    // roads
-    for road in &city_gen.roads {
-        for (x, y) in road {
-            img.put_pixel(
-                *x as u32 - city_gen.min_x as u32,
-                *y as u32 - city_gen.min_y as u32,
-                Rgb([0, 255, 0]),
-            );
-        }
     }
 
     img.save("output/city.png")
