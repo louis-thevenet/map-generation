@@ -27,7 +27,7 @@ fn city_generator(cli: &Cli) -> ImageResult<()> {
     let mut city_gen = CityGenerator::new(
         8..30,
         8..30,
-        20..30,
+        20..100,
         width,
         height,
         important_buildings_max_distance,
@@ -65,11 +65,12 @@ fn city_generator(cli: &Cli) -> ImageResult<()> {
             ),
             building.width as u32,
             building.height as u32,
-            if building.is_important {
-                Rgb([0, 0, 255])
-            } else {
-                Rgb([255, 255, 255])
-            },
+            // color based on id, the less the more red
+            Rgb([
+                255 - (building.id as f32 / buildings as f32 * 255.0) as u8,
+                if building.is_important { 255 } else { 0 },
+                (building.id as f32 / buildings as f32 * 255.0) as u8,
+            ]),
         );
         draw_rect(
             &mut img,

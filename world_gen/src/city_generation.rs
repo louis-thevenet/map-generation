@@ -1,4 +1,4 @@
-use std::{collections::HashMap, f32::consts::PI, ops::Range};
+use std::{collections::HashMap, ops::Range};
 
 use pathfinding::prelude::astar;
 use rand::{seq::IteratorRandom, thread_rng, Rng};
@@ -19,6 +19,7 @@ pub struct Building {
     pub width: i32,
     pub height: i32,
     pub is_important: bool,
+    pub id: usize,
 }
 impl Building {
     /// Check if two buildings overlap
@@ -36,7 +37,7 @@ impl Building {
     }
 
     /// Create a building from a rectangle and randomizes the door
-    fn with_random_door(x: i32, y: i32, width: i32, height: i32) -> Self {
+    fn with_random_door(x: i32, y: i32, width: i32, height: i32, id: usize) -> Self {
         let (door_x, door_y) = if thread_rng().gen_bool(0.5) {
             // on northern or southern side
             if thread_rng().gen_bool(0.5) {
@@ -63,6 +64,7 @@ impl Building {
             y,
             width,
             height,
+            id,
         }
     }
     fn make_important(self) -> Self {
@@ -72,39 +74,41 @@ impl Building {
         }
     }
 
-    fn with_door_direction(
-        x: i32,
-        y: i32,
-        width: i32,
-        height: i32,
-        door_direction: (i32, i32),
-    ) -> Building {
-        let angle = (door_direction.1 as f32).atan2(door_direction.0 as f32);
-        // door placement is on intersection of the building and the line
+    // fn with_door_direction(
+    //     x: i32,
+    //     y: i32,
+    //     width: i32,
+    //     height: i32,
+    //     door_direction: (i32, i32),
+    //     id: usize,
+    // ) -> Building {
+    //     let angle = (door_direction.1 as f32).atan2(door_direction.0 as f32);
+    //     // door placement is on intersection of the building and the line
 
-        let (door_x, door_y) = if angle < PI / 4.0 && angle > -PI / 4.0 {
-            // door is on the right
-            (x + width, y + height / 2)
-        } else if angle > PI / 4.0 && angle < 3.0 * PI / 4.0 {
-            // door is on the bottom
-            (x + width / 2, y + height)
-        } else if !(-3.0 * PI / 4.0..=3.0 * PI / 4.0).contains(&angle) {
-            // door is on the left
-            (x, y + height / 2)
-        } else {
-            // door is on the top
-            (x + width / 2, y)
-        };
+    //     let (door_x, door_y) = if angle < PI / 4.0 && angle > -PI / 4.0 {
+    //         // door is on the right
+    //         (x + width, y + height / 2)
+    //     } else if angle > PI / 4.0 && angle < 3.0 * PI / 4.0 {
+    //         // door is on the bottom
+    //         (x + width / 2, y + height)
+    //     } else if !(-3.0 * PI / 4.0..=3.0 * PI / 4.0).contains(&angle) {
+    //         // door is on the left
+    //         (x, y + height / 2)
+    //     } else {
+    //         // door is on the top
+    //         (x + width / 2, y)
+    //     };
 
-        Self {
-            is_important: false,
-            door: (door_x, door_y),
-            x,
-            y,
-            width,
-            height,
-        }
-    }
+    //     Self {
+    //         is_important: false,
+    //         door: (door_x, door_y),
+    //         x,
+    //         y,
+    //         width,
+    //         height,
+    //         id,
+    //     }
+    // }
 }
 
 /// Random city generator
@@ -178,7 +182,7 @@ impl CityGenerator {
     fn generate_important_buildings(&mut self, n: usize) {
         for _ in 0..n {
             // New building
-            let b1 = self.generate_random_building().make_important();
+            let b1 = self.generate_random_building(0).make_important();
             // Register the building in the map
             for x in b1.x..=b1.x + b1.width {
                 for y in b1.y..=b1.y + b1.height {
@@ -231,7 +235,7 @@ impl CityGenerator {
         //     }
         // }
     }
-    fn generate_random_building(&mut self) -> Building {
+    fn generate_random_building(&mut self, id: usize) -> Building {
         let (x, y) = (
             thread_rng().gen_range(
                 -self.important_buildings_max_distance..self.important_buildings_max_distance,
@@ -243,14 +247,15 @@ impl CityGenerator {
         let width = thread_rng().gen_range(self.width_bound.clone());
         let height = thread_rng().gen_range(self.height_bound.clone());
 
-        let building = Building::with_random_door(x, y, width, height);
+        let building = Building::with_random_door(x, y, width, height, id);
         if self.buildings.values().any(|b| b.overlaps(&building, 3)) {
-            self.generate_random_building()
+            self.generate_random_building(id)
         } else {
             building
         }
     }
     fn generate_buildings(&mut self, mut n: usize) {
+        let init_n = n as f32;
         while n > 0 {
             let Building {
                 door: _,
@@ -259,12 +264,22 @@ impl CityGenerator {
                 y,
                 width,
                 height,
+                id: _,
             } = { self.buildings.values().choose(&mut thread_rng()).unwrap() };
             let x_center = x + width / 2;
             let y_center = y + height / 2;
 
-            let distance_x = thread_rng().gen_range(self.distance_bound.clone());
-            let distance_y = thread_rng().gen_range(self.distance_bound.clone());
+            // let distance_x = thread_rng().gen_range(self.distance_bound.clone());
+            // let distance_y = thread_rng().gen_range(self.distance_bound.clone());
+
+            let distance_x = ((self.distance_bound.end - self.distance_bound.start) as f32
+                * n as f32
+                / init_n) as i32
+                + self.distance_bound.start;
+
+            let distance_y = ((self.distance_bound.end - self.distance_bound.start) as f32
+                * (n as f32 / init_n)) as i32
+                + self.distance_bound.start;
 
             let spawn_x = if thread_rng().gen_bool(0.5) {
                 x_center + distance_x
@@ -294,7 +309,7 @@ impl CityGenerator {
                     }
                 }
             }
-            // let new_building = Building::with_random_door(spawn_x, spawn_y, width, height);
+            let new_building = Building::with_random_door(spawn_x, spawn_y, width, height, n);
             // let overlaps = self
             //     .buildings
             //     .iter()
@@ -311,16 +326,16 @@ impl CityGenerator {
                     )
                     .unwrap();
 
-                let door_direction = {
-                    let (x, y) = (
-                        closest_important_building.door.0 - (spawn_x + width / 2),
-                        closest_important_building.door.1 - (spawn_y + height / 2),
-                    );
+                // let door_direction = {
+                //     let (x, y) = (
+                //         closest_important_building.door.0 - (spawn_x + width / 2),
+                //         closest_important_building.door.1 - (spawn_y + height / 2),
+                //     );
 
-                    (x, y)
-                };
-                let new_building =
-                    Building::with_door_direction(spawn_x, spawn_y, width, height, door_direction);
+                //     (x, y)
+                // };
+                // let new_building =
+                //     Building::with_door_direction(spawn_x, spawn_y, width, height, door_direction);
 
                 for x in spawn_x..=spawn_x + width {
                     for y in spawn_y..=spawn_y + height {
