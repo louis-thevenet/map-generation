@@ -336,24 +336,29 @@ impl CityGenerator {
             let width = thread_rng().gen_range(self.width_bound.clone());
             let height = thread_rng().gen_range(self.height_bound.clone());
 
-            let mut overlaps = false;
-            let offset = 8;
-            for i in spawn_x - offset..=spawn_x + width + offset {
-                for j in spawn_y - offset..=spawn_y + height + offset {
-                    if self.is_something.contains_key(&(i, j)) {
-                        overlaps = true;
-                        break;
-                    }
-                    if overlaps {
-                        break;
-                    }
-                }
-            }
+            let offset = 8; // minimum distance between buildings
             let new_building = Building::with_random_door(spawn_x, spawn_y, width, height, n);
-            // let overlaps = self
-            //     .buildings
-            //     .iter()
-            //     .any(|(_, b)| b.overlaps(&new_building, offset) && b != &new_building);
+            let overlaps =
+                        // seems inefficient but it's A* that's the bottleneck
+                            self
+                            .buildings
+                            .iter()
+                            .any(|(_, b)| b.overlaps(&new_building, offset) && b != &new_building)
+                            // it's okay to only check on building walls and not inside
+
+                            || (spawn_x..=spawn_x + width)
+                                .any(|x| self.is_something.contains_key(&(x, spawn_y)))
+
+                            || (spawn_x..=spawn_x + width
+            )                    .any(|x| self.is_something.contains_key(&(x, spawn_y + height)))
+
+                            || (spawn_y..=spawn_y + height)
+                                .any(|y| self.is_something.contains_key(&(spawn_x, y)))
+
+                            ||( spawn_y..=spawn_y + height
+            )                    .any(|y| self.is_something.contains_key(&(spawn_x + width, y)))
+
+                            ;
 
             if !overlaps {
                 let closest_important_building = self
@@ -365,17 +370,6 @@ impl CityGenerator {
                             .unwrap(),
                     )
                     .unwrap();
-
-                // let door_direction = {
-                //     let (x, y) = (
-                //         closest_important_building.door.0 - (spawn_x + width / 2),
-                //         closest_important_building.door.1 - (spawn_y + height / 2),
-                //     );
-
-                //     (x, y)
-                // };
-                // let new_building =
-                //     Building::with_door_direction(spawn_x, spawn_y, width, height, door_direction);
 
                 for x in spawn_x..=spawn_x + width {
                     for y in spawn_y..=spawn_y + height {
@@ -389,9 +383,9 @@ impl CityGenerator {
                 {
                     road
                 } else {
-                    // println!(
-                    //     "No road found between {closest_important_building:?} and {spawn_x},{spawn_y}"
-                    // );
+                    println!(
+                        "No road found between {closest_important_building:?} and {spawn_x},{spawn_y}"
+                    );
 
                     vec![]
                 };
