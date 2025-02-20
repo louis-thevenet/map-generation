@@ -10,7 +10,7 @@ struct Cli {
     #[arg(short, long)]
     buildings: usize,
     #[arg(short, long)]
-    important_buildings: usize,
+    seed_buildings: usize,
     #[arg(short, long)]
     important_buildings_max_distance: i32,
 }
@@ -18,20 +18,10 @@ struct Cli {
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn city_generator(cli: &Cli) -> ImageResult<()> {
     let buildings = cli.buildings;
-    let important_buildings = cli.important_buildings;
+    let important_buildings = cli.seed_buildings;
     let important_buildings_max_distance = cli.important_buildings_max_distance;
 
-    let width = 512;
-    let height = width;
-
-    let mut city_gen = CityGenerator::new(
-        8..30,
-        8..30,
-        20..100,
-        width,
-        height,
-        important_buildings_max_distance,
-    );
+    let mut city_gen = CityGenerator::new(8..30, 8..30, 20..100, important_buildings_max_distance);
 
     city_gen.generate(buildings, important_buildings);
 

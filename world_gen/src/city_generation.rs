@@ -130,10 +130,6 @@ pub struct CityGenerator {
     pub max_y: i32,
     /// Lets us know if a point is not free
     is_something: HashMap<(i32, i32), CellType>,
-    /// Bounds for the width of the buildings
-    width: i32,
-    /// Bounds for the height of the buildings
-    height: i32,
     /// Min and max width of the buildings
     width_bound: Range<i32>,
     /// Min and max height of the buildings
@@ -150,8 +146,6 @@ impl CityGenerator {
         width_bound: Range<i32>,
         height_bound: Range<i32>,
         distance_bound: Range<i32>,
-        width: i32,
-        height: i32,
         important_buildings_max_distance: i32,
     ) -> Self {
         Self {
@@ -169,20 +163,22 @@ impl CityGenerator {
             width_bound,
             height_bound,
             distance_bound,
-            width,
-            height,
             important_buildings_max_distance,
         }
     }
     pub fn generate(&mut self, normal_buildings: usize, important_buildings: usize) {
+        println!("Generating important buildings");
         self.generate_important_buildings(important_buildings);
-        println!("Important buildings generated");
+        println!("Generating normal buildings");
         self.generate_buildings(normal_buildings);
     }
     fn generate_important_buildings(&mut self, n: usize) {
+        // generate the important buildings with a smaller scale
+        let scale_factor = 10;
+
         for _ in 0..n {
             // New building
-            let b1 = self.generate_random_building(0).make_important();
+            let b1 = self.generate_random_important_building(scale_factor);
             // Register the building in the map
             for x in b1.x..=b1.x + b1.width {
                 for y in b1.y..=b1.y + b1.height {
@@ -199,57 +195,101 @@ impl CityGenerator {
         }
         let buildings = self.buildings.values().collect::<Vec<&Building>>(); // We'll iterate over the buildings
 
-        for i in 0..buildings.len() {
-            // link to a random building
-            let b1 = buildings[i];
-            let b2 = buildings
-                .iter()
-                .filter(|&&b2| b1 != b2)
-                .choose(&mut thread_rng())
-                .unwrap(); // retry instead of filter is better
+        for &b1 in &buildings {
+            // let b2 = buildings
+            //     .iter()
+            //     .filter(|&&b2| b1 != b2)
+            //     .choose(&mut thread_rng())
+            //     .unwrap(); // retry instead of filter is better
 
-            let road = if let Some((road, _)) = self.generate_road(b1, b2) {
-                road
-            } else {
-                println!("No road found between {b1:?} and {b2:?}");
-                vec![]
-            };
-            for (x, y) in &road {
-                self.is_something.insert((*x, *y), CellType::Road);
+            for b2 in self.buildings.values() {
+                if b1 == b2 {
+                    continue;
+                }
+
+                let road = if let Some((road, _)) = self.generate_road(b1, b2) {
+                    road
+                } else {
+                    vec![]
+                };
+                for (x, y) in &road {
+                    self.is_something.insert((*x, *y), CellType::Road);
+                }
+                self.roads.push(road);
             }
-            self.roads.push(road);
         }
-        // for i in 0..buildings.len() {
-        //     let b1 = buildings[i];
-        //     for b2 in &buildings[i + 1..] {
-        //         let road = if let Some((road, _)) = self.generate_road(b2, b1) {
-        //             road
-        //         } else {
-        //             println!("No road found between {b1:?} and {b2:?}");
-        //             vec![]
-        //         };
-        //         for (x, y) in &road {
-        //             self.is_something.insert((*x, *y), CellType::Road);
-        //         }
-        //         self.roads.push(road);
-        //     }
-        // }
+        // Now, we will update everywthing to scale, so multiply everything by the scale factor
+        if scale_factor > 1 {
+            self.is_something.clear();
+            self.min_x *= scale_factor;
+            self.min_y *= scale_factor;
+            self.max_x *= scale_factor;
+            self.max_y *= scale_factor;
+
+            for building in self.buildings.values_mut() {
+                building.x *= scale_factor;
+                building.y *= scale_factor;
+                building.width *= scale_factor;
+                building.height *= scale_factor;
+
+                building.door.0 *= scale_factor;
+                building.door.1 *= scale_factor;
+
+                for x in building.x..=building.x + building.width {
+                    for y in building.y..=building.y + building.height {
+                        self.is_something.insert((x, y), CellType::Building);
+                    }
+                }
+                self.is_something.remove(&building.door);
+            }
+            for road in &mut self.roads {
+                let mut scaled_road = vec![];
+                for i in 0..road.len() - 1 {
+                    let mut direction = (road[i + 1].0 - road[i].0, road[i + 1].1 - road[i].1);
+                    direction = (
+                        if direction.0 == 0 {
+                            0
+                        } else {
+                            direction.0 / direction.0.abs()
+                        },
+                        if direction.1 == 0 {
+                            0
+                        } else {
+                            direction.1 / direction.1.abs()
+                        },
+                    );
+
+                    let mut position = (road[i].0 * scale_factor, road[i].1 * scale_factor);
+                    for _i in 0..scale_factor {
+                        scaled_road.push(position);
+                        self.is_something.insert(position, CellType::Road);
+                        position = (position.0 + direction.0, position.1 + direction.1);
+                    }
+                }
+                *road = scaled_road;
+            }
+        }
     }
-    fn generate_random_building(&mut self, id: usize) -> Building {
+    /// Generate a random important building
+    fn generate_random_important_building(&mut self, scale_factor: i32) -> Building {
         let (x, y) = (
             thread_rng().gen_range(
-                -self.important_buildings_max_distance..self.important_buildings_max_distance,
-            ) + self.width,
+                -(self.important_buildings_max_distance / (scale_factor * 2))
+                    ..(self.important_buildings_max_distance / (scale_factor * 2)),
+            ),
             thread_rng().gen_range(
-                -self.important_buildings_max_distance..self.important_buildings_max_distance,
-            ) + self.height,
+                (-self.important_buildings_max_distance / (scale_factor * 2))
+                    ..(self.important_buildings_max_distance / (scale_factor * 2)),
+            ),
         );
-        let width = thread_rng().gen_range(self.width_bound.clone());
-        let height = thread_rng().gen_range(self.height_bound.clone());
+        let width =
+            (thread_rng().gen_range(self.width_bound.clone()) + scale_factor) / scale_factor;
+        let height =
+            (thread_rng().gen_range(self.height_bound.clone()) + scale_factor) / scale_factor;
 
-        let building = Building::with_random_door(x, y, width, height, id);
+        let building = Building::with_random_door(x, y, width, height, 0).make_important();
         if self.buildings.values().any(|b| b.overlaps(&building, 3)) {
-            self.generate_random_building(id)
+            self.generate_random_important_building(scale_factor)
         } else {
             building
         }
@@ -349,9 +389,9 @@ impl CityGenerator {
                 {
                     road
                 } else {
-                    println!(
-                        "No road found between {closest_important_building:?} and {spawn_x},{spawn_y}"
-                    );
+                    // println!(
+                    //     "No road found between {closest_important_building:?} and {spawn_x},{spawn_y}"
+                    // );
 
                     vec![]
                 };
