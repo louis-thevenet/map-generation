@@ -10,21 +10,30 @@ struct Cli {
     #[arg(short, long)]
     buildings: usize,
     #[arg(short, long)]
-    min_distance_road: i32,
+    important_buildings: usize,
+    #[arg(short, long)]
+    important_buildings_max_distance: i32,
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn city_generator(cli: &Cli) -> ImageResult<()> {
     let buildings = cli.buildings;
-    let min_distance_road = cli.min_distance_road;
+    let important_buildings = cli.important_buildings;
+    let important_buildings_max_distance = cli.important_buildings_max_distance;
 
     let width = 512;
     let height = width;
 
-    let mut city_gen = CityGenerator::new(8..30, 8..30, 20..30, width, height, min_distance_road);
+    let mut city_gen = CityGenerator::new(
+        8..30,
+        8..30,
+        20..30,
+        width,
+        height,
+        important_buildings_max_distance,
+    );
 
-    city_gen.generate_buildings(buildings);
-    city_gen.generate_roads_astar();
+    city_gen.generate(buildings, important_buildings);
 
     // city_gen.generate_roads_astar();
     let mut img = ImageBuffer::new(
@@ -56,7 +65,11 @@ fn city_generator(cli: &Cli) -> ImageResult<()> {
             ),
             building.width as u32,
             building.height as u32,
-            Rgb([255, 255, 255]),
+            if building.is_important {
+                Rgb([0, 0, 255])
+            } else {
+                Rgb([255, 255, 255])
+            },
         );
         draw_rect(
             &mut img,
