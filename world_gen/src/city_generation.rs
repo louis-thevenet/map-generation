@@ -477,7 +477,8 @@ impl CityGenerator {
             |&p| self.successors(p),
             |&p| {
                 let (x, y) = p;
-                (x - end.x + end.width).abs() + (y - end.y + end.height).abs()
+                ((((x - end.x + end.width).abs() + (y - end.y + end.height).abs()) * 10) as f64)
+                    .sqrt() as i32
             },
             |&p| matches!(self.is_something.get(&p), Some(CellType::Road)) || end.contains(p),
         )
