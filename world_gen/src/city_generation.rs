@@ -1,5 +1,7 @@
 use pathfinding::prelude::astar;
-use rand::{seq::IteratorRandom, thread_rng, Rng};
+use rand::{seq::IteratorRandom, Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
+use rayon::slice::ParallelSliceMut;
 use std::{collections::HashMap, ops::Range};
 
 const CITY_BOUNDS_OFFSET: i32 = 20;
@@ -42,24 +44,31 @@ impl Building {
     }
 
     /// Create a building from a rectangle and ID, randomizes the door
-    fn with_random_door(x: i32, y: i32, width: i32, height: i32, id: usize) -> Self {
-        let (door_x, door_y) = if thread_rng().gen_bool(0.5) {
+    fn with_random_door(
+        rng: &mut ChaCha8Rng,
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+        id: usize,
+    ) -> Self {
+        let (door_x, door_y) = if rng.gen_bool(0.5) {
             // on northern or southern side
-            if thread_rng().gen_bool(0.5) {
+            if rng.gen_bool(0.5) {
                 // northern side
-                (thread_rng().gen_range(x..x + width), y)
+                (rng.gen_range(x..x + width), y)
             } else {
                 // southern side
-                (thread_rng().gen_range(x..x + width), y + height)
+                (rng.gen_range(x..x + width), y + height)
             }
         } else {
             // on eastern or western side
-            if thread_rng().gen_bool(0.5) {
+            if rng.gen_bool(0.5) {
                 // eastern side
-                (x + width, thread_rng().gen_range(y..y + height))
+                (x + width, rng.gen_range(y..y + height))
             } else {
                 // western side
-                (x, thread_rng().gen_range(y..y + height))
+                (x, rng.gen_range(y..y + height))
             }
         };
         Self {
@@ -83,6 +92,7 @@ impl Building {
 
 /// Random city generator
 pub struct CityGenerator {
+    rng: ChaCha8Rng,
     /// Buildings of the city
     pub buildings: HashMap<(i32, i32), Building>,
     /// Buildings of the city
@@ -112,16 +122,18 @@ pub struct CityGenerator {
 impl CityGenerator {
     #[must_use]
     pub fn new(
+        seed: u64,
         width_bound: Range<i32>,
         height_bound: Range<i32>,
         distance_bound: Range<i32>,
         important_buildings_max_distance: i32,
     ) -> Self {
         Self {
-            min_x: 0,
-            min_y: 0,
-            max_x: i32::MAX,
-            max_y: i32::MAX,
+            rng: ChaCha8Rng::seed_from_u64(seed),
+            min_x: i32::MAX,
+            min_y: i32::MAX,
+            max_x: 0,
+            max_y: 0,
             buildings: HashMap::new(),
             important_buildings: vec![],
             is_something: HashMap::new(),
@@ -164,16 +176,11 @@ impl CityGenerator {
             self.update_borders_from_new_building(&b1);
             self.buildings.insert((b1.x, b1.y), b1);
         }
-        let buildings = self.buildings.values().collect::<Vec<&Building>>(); // We'll iterate over the buildings
+        let mut buildings = self.buildings.values().collect::<Vec<&Building>>(); // We'll iterate over the buildings
+        buildings.par_sort_by(|b1, b2| b1.x.cmp(&b2.x).then(b1.y.cmp(&b2.y)));
 
         for &b1 in &buildings {
-            // let b2 = buildings
-            //     .iter()
-            //     .filter(|&&b2| b1 != b2)
-            //     .choose(&mut thread_rng())
-            //     .unwrap(); // retry instead of filter is better
-
-            for b2 in self.buildings.values() {
+            for &b2 in &buildings {
                 if b1 == b2 {
                     continue;
                 }
@@ -247,21 +254,20 @@ impl CityGenerator {
     /// Generate a random important building
     fn generate_random_important_building(&mut self, scale_factor: i32) -> Building {
         let (x, y) = (
-            thread_rng().gen_range(
+            self.rng.gen_range(
                 -(self.important_buildings_max_distance / (scale_factor * 2))
                     ..(self.important_buildings_max_distance / (scale_factor * 2)),
             ),
-            thread_rng().gen_range(
+            self.rng.gen_range(
                 (-self.important_buildings_max_distance / (scale_factor * 2))
                     ..(self.important_buildings_max_distance / (scale_factor * 2)),
             ),
         );
-        let width =
-            (thread_rng().gen_range(self.width_bound.clone()) + scale_factor) / scale_factor;
-        let height =
-            (thread_rng().gen_range(self.height_bound.clone()) + scale_factor) / scale_factor;
+        let width = (self.rng.gen_range(self.width_bound.clone()) + scale_factor) / scale_factor;
+        let height = (self.rng.gen_range(self.height_bound.clone()) + scale_factor) / scale_factor;
 
-        let building = Building::with_random_door(x, y, width, height, 0).make_important();
+        let building =
+            Building::with_random_door(&mut self.rng, x, y, width, height, 0).make_important();
         if self.buildings.values().any(|b| b.overlaps(&building, 3)) {
             self.generate_random_important_building(scale_factor)
         } else {
@@ -279,12 +285,17 @@ impl CityGenerator {
                 width,
                 height,
                 id: _,
-            } = { self.buildings.values().choose(&mut thread_rng()).unwrap() };
+            } = {
+                let values = self.buildings.values();
+                let mut a = values.into_iter().collect::<Vec<&Building>>();
+                a.par_sort_by(|b1, b2| b1.x.cmp(&b2.x).then(b1.y.cmp(&b2.y)));
+                a.into_iter().choose(&mut self.rng).unwrap()
+            };
             let x_center = x + width / 2;
             let y_center = y + height / 2;
 
-            // let distance_x = thread_rng().gen_range(self.distance_bound.clone());
-            // let distance_y = thread_rng().gen_range(self.distance_bound.clone());
+            // let distance_x = self.rng.gen_range(self.distance_bound.clone());
+            // let distance_y = self.rng.gen_range(self.distance_bound.clone());
 
             let distance_x = ((self.distance_bound.end - self.distance_bound.start) as f32
                 * n as f32
@@ -295,23 +306,24 @@ impl CityGenerator {
                 * (n as f32 / init_n)) as i32
                 + self.distance_bound.start;
 
-            let spawn_x = if thread_rng().gen_bool(0.5) {
+            let spawn_x = if self.rng.gen_bool(0.5) {
                 x_center + distance_x
             } else {
                 x_center - distance_x
             };
 
-            let spawn_y = if thread_rng().gen_bool(0.5) {
+            let spawn_y = if self.rng.gen_bool(0.5) {
                 y_center + distance_y
             } else {
                 y_center - distance_y
             };
 
-            let width = thread_rng().gen_range(self.width_bound.clone());
-            let height = thread_rng().gen_range(self.height_bound.clone());
+            let width = self.rng.gen_range(self.width_bound.clone());
+            let height = self.rng.gen_range(self.height_bound.clone());
 
             let offset = 8; // minimum distance between buildings
-            let new_building = Building::with_random_door(spawn_x, spawn_y, width, height, n);
+            let new_building =
+                Building::with_random_door(&mut self.rng, spawn_x, spawn_y, width, height, n);
             let overlaps =
                         // seems inefficient but it's A* that's the bottleneck
                             self
@@ -468,5 +480,24 @@ impl CityGenerator {
             },
             |&p| matches!(self.is_something.get(&p), Some(CellType::Road)) || end.contains(p),
         )
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::CityGenerator;
+
+    #[test]
+    fn test_different_seeds() {
+        let seed = 1;
+        let mut city_gen1 = CityGenerator::new(seed, 10..30, 10..30, 20..100, 1000);
+        let mut city_gen2 = CityGenerator::new(seed, 10..30, 10..30, 20..100, 1000);
+        city_gen1.generate(100, 6, 10);
+        city_gen2.generate(100, 6, 10);
+
+        assert_eq!(city_gen1.min_x, city_gen2.min_x);
+        assert_eq!(city_gen1.min_y, city_gen2.min_y);
+        assert_eq!(city_gen1.max_x, city_gen2.max_x);
+        assert_eq!(city_gen1.max_y, city_gen2.max_y);
+        assert_eq!(city_gen1.buildings, city_gen2.buildings);
     }
 }
