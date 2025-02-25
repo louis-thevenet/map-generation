@@ -1,24 +1,30 @@
-use std::{collections::HashMap, ops::Range};
-
 use pathfinding::prelude::astar;
 use rand::{seq::IteratorRandom, thread_rng, Rng};
+use std::{collections::HashMap, ops::Range};
+
+const CITY_BOUNDS_OFFSET: i32 = 20;
+
 enum CellType {
     Road,
     Building,
 }
 
-/// Represents a building in the city
-/// x, y are the coordinates of the top left corner of the building
-/// width, height are the dimensions of the building
-/// door is the coordinates of the door of the building
+/// Building of the city
 #[derive(Clone, Debug, PartialEq, PartialOrd, Ord, Eq)]
 pub struct Building {
+    /// Coordinates of the door
     pub door: (i32, i32),
+    /// x coordinate of top left corner
     pub x: i32,
+    /// y coordinate of top left corner
     pub y: i32,
+    /// Width of the building
     pub width: i32,
+    /// Height of the building
     pub height: i32,
+    /// If the building is important
     pub is_important: bool,
+    /// Unique identifier
     pub id: usize,
 }
 impl Building {
@@ -29,14 +35,13 @@ impl Building {
             && self.y - offset < other.y + other.height
             && self.y + self.height + offset > other.y
     }
-    /// Check if a point is inside the building
+    /// Check if a point is inside the building (including its walls)
     fn contains(&self, pos: (i32, i32)) -> bool {
         let (x, y) = pos;
-
         x >= self.x && x <= self.x + self.width && y >= self.y && y <= self.y + self.height
     }
 
-    /// Create a building from a rectangle and randomizes the door
+    /// Create a building from a rectangle and ID, randomizes the door
     fn with_random_door(x: i32, y: i32, width: i32, height: i32, id: usize) -> Self {
         let (door_x, door_y) = if thread_rng().gen_bool(0.5) {
             // on northern or southern side
@@ -67,48 +72,13 @@ impl Building {
             id,
         }
     }
+    /// Make the building important
     fn make_important(self) -> Self {
         Self {
             is_important: true,
             ..self
         }
     }
-
-    // fn with_door_direction(
-    //     x: i32,
-    //     y: i32,
-    //     width: i32,
-    //     height: i32,
-    //     door_direction: (i32, i32),
-    //     id: usize,
-    // ) -> Building {
-    //     let angle = (door_direction.1 as f32).atan2(door_direction.0 as f32);
-    //     // door placement is on intersection of the building and the line
-
-    //     let (door_x, door_y) = if angle < PI / 4.0 && angle > -PI / 4.0 {
-    //         // door is on the right
-    //         (x + width, y + height / 2)
-    //     } else if angle > PI / 4.0 && angle < 3.0 * PI / 4.0 {
-    //         // door is on the bottom
-    //         (x + width / 2, y + height)
-    //     } else if !(-3.0 * PI / 4.0..=3.0 * PI / 4.0).contains(&angle) {
-    //         // door is on the left
-    //         (x, y + height / 2)
-    //     } else {
-    //         // door is on the top
-    //         (x + width / 2, y)
-    //     };
-
-    //     Self {
-    //         is_important: false,
-    //         door: (door_x, door_y),
-    //         x,
-    //         y,
-    //         width,
-    //         height,
-    //         id,
-    //     }
-    // }
 }
 
 /// Random city generator
@@ -117,7 +87,6 @@ pub struct CityGenerator {
     pub buildings: HashMap<(i32, i32), Building>,
     /// Buildings of the city
     pub important_buildings: Vec<(i32, i32)>,
-
     /// Roads of the city
     pub roads: Vec<Vec<(i32, i32)>>,
     /// x coordinate of the leftmost building
@@ -151,34 +120,36 @@ impl CityGenerator {
         Self {
             min_x: 0,
             min_y: 0,
-            max_x: 0,
-            max_y: 0,
-
+            max_x: i32::MAX,
+            max_y: i32::MAX,
             buildings: HashMap::new(),
             important_buildings: vec![],
-
             is_something: HashMap::new(),
             roads: vec![],
-
             width_bound,
             height_bound,
             distance_bound,
             important_buildings_max_distance,
         }
     }
-    pub fn generate(&mut self, normal_buildings: usize, important_buildings: usize) {
+    pub fn generate(
+        &mut self,
+        normal_buildings: usize,
+        important_buildings: usize,
+        important_building_scale: i32,
+    ) {
         println!("Generating important buildings");
-        self.generate_important_buildings(important_buildings);
+        self.generate_important_buildings(important_buildings, important_building_scale);
         println!("Generating normal buildings");
         self.generate_buildings(normal_buildings);
+        self.update_borders();
     }
-    fn generate_important_buildings(&mut self, n: usize) {
+    fn generate_important_buildings(&mut self, n: usize, important_building_scale: i32) {
         // generate the important buildings with a smaller scale
-        let scale_factor = 10;
 
         for _ in 0..n {
             // New building
-            let b1 = self.generate_random_important_building(scale_factor);
+            let b1 = self.generate_random_important_building(important_building_scale);
             // Register the building in the map
             for x in b1.x..=b1.x + b1.width {
                 for y in b1.y..=b1.y + b1.height {
@@ -219,21 +190,21 @@ impl CityGenerator {
             }
         }
         // Now, we will update everywthing to scale, so multiply everything by the scale factor
-        if scale_factor > 1 {
+        if important_building_scale > 1 {
             self.is_something.clear();
-            self.min_x *= scale_factor;
-            self.min_y *= scale_factor;
-            self.max_x *= scale_factor;
-            self.max_y *= scale_factor;
+            self.min_x *= important_building_scale;
+            self.min_y *= important_building_scale;
+            self.max_x *= important_building_scale;
+            self.max_y *= important_building_scale;
 
             for building in self.buildings.values_mut() {
-                building.x *= scale_factor;
-                building.y *= scale_factor;
-                building.width *= scale_factor;
-                building.height *= scale_factor;
+                building.x *= important_building_scale;
+                building.y *= important_building_scale;
+                building.width *= important_building_scale;
+                building.height *= important_building_scale;
 
-                building.door.0 *= scale_factor;
-                building.door.1 *= scale_factor;
+                building.door.0 *= important_building_scale;
+                building.door.1 *= important_building_scale;
 
                 for x in building.x..=building.x + building.width {
                     for y in building.y..=building.y + building.height {
@@ -259,8 +230,11 @@ impl CityGenerator {
                         },
                     );
 
-                    let mut position = (road[i].0 * scale_factor, road[i].1 * scale_factor);
-                    for _i in 0..scale_factor {
+                    let mut position = (
+                        road[i].0 * important_building_scale,
+                        road[i].1 * important_building_scale,
+                    );
+                    for _i in 0..important_building_scale {
                         scaled_road.push(position);
                         self.is_something.insert(position, CellType::Road);
                         position = (position.0 + direction.0, position.1 + direction.1);
@@ -361,8 +335,8 @@ impl CityGenerator {
                             ;
 
             if !overlaps {
-                let closest_important_building = self
-                    .buildings
+                let buildings_clone = self.buildings.clone();
+                let closest_important_building = buildings_clone
                     .get(
                         self.important_buildings
                             .iter()
@@ -378,6 +352,7 @@ impl CityGenerator {
                 }
                 self.is_something.remove(&(*x, *y));
 
+                self.update_borders_from_new_building(&new_building);
                 let road = if let Some((road, _)) =
                     self.generate_road(&new_building, closest_important_building)
                 {
@@ -392,7 +367,6 @@ impl CityGenerator {
                 for (x, y) in &road {
                     self.is_something.insert((*x, *y), CellType::Road);
                 }
-                self.update_borders_from_new_building(&new_building);
                 self.buildings.insert((spawn_x, spawn_y), new_building);
                 self.roads.push(road);
 
@@ -401,31 +375,38 @@ impl CityGenerator {
         }
     }
 
-    // fn update_borders(&mut self) {
-    //     self.min_x = self.buildings.values().map(|b| b.x).min().unwrap() - 20;
-    //     self.min_y = self.buildings.values().map(|b| b.y).min().unwrap() - 20;
+    /// Computes the borders of the city
+    fn update_borders(&mut self) {
+        self.min_x = self.buildings.values().map(|b| b.x).min().unwrap() - CITY_BOUNDS_OFFSET;
+        self.min_y = self.buildings.values().map(|b| b.y).min().unwrap() - CITY_BOUNDS_OFFSET;
 
-    //     self.max_x = self
-    //         .buildings
-    //         .values()
-    //         .map(|b| b.x + b.width)
-    //         .max()
-    //         .unwrap()
-    //         + 20;
-    //     self.max_y = self
-    //         .buildings
-    //         .values()
-    //         .map(|b| b.y + b.height)
-    //         .max()
-    //         .unwrap()
-    //         + 20;
-    // }
+        self.max_x = self
+            .buildings
+            .values()
+            .map(|b| b.x + b.width)
+            .max()
+            .unwrap()
+            + CITY_BOUNDS_OFFSET;
+        self.max_y = self
+            .buildings
+            .values()
+            .map(|b| b.y + b.height)
+            .max()
+            .unwrap()
+            + CITY_BOUNDS_OFFSET;
+    }
+
+    /// Update the borders of the city based on a new building
     fn update_borders_from_new_building(&mut self, building: &Building) {
-        self.min_x = self.min_x.min(building.x - 20);
-        self.min_y = self.min_y.min(building.y - 20);
+        self.min_x = self.min_x.min(building.x - CITY_BOUNDS_OFFSET);
+        self.min_y = self.min_y.min(building.y - CITY_BOUNDS_OFFSET);
 
-        self.max_x = self.max_x.max(building.x + building.width + 20);
-        self.max_y = self.max_y.max(building.y + building.height + 20);
+        self.max_x = self
+            .max_x
+            .max(building.x + building.width + CITY_BOUNDS_OFFSET);
+        self.max_y = self
+            .max_y
+            .max(building.y + building.height + CITY_BOUNDS_OFFSET);
     }
 
     fn successors(&self, p: (i32, i32)) -> Vec<((i32, i32), i32)> {
@@ -434,11 +415,13 @@ impl CityGenerator {
         let mut successors = vec![];
         for i in -1..=1 {
             for j in -1..=1 {
-                // forbid diagonal
+                // Don't go diagonally
                 if i != 0 && j != 0 {
                     continue;
                 }
 
+                // Don't go back to the same point
+                // Don't go out of known bounds
                 if i == 0 && j == 0
                     || (x + i < self.min_x
                         || x + i >= self.max_x
@@ -469,15 +452,18 @@ impl CityGenerator {
         successors
     }
 
+    /// Wrapper around A* to generate a road between two buildings
+    /// Road will start at the door of the first building and end as close as possible to the second
+    /// building or an existing road
+    #[allow(clippy::cast_possible_truncation)]
     fn generate_road(&self, start: &Building, end: &Building) -> Option<(Vec<(i32, i32)>, i32)> {
-        // let (x1, y1) = end.door;
         let (x2, y2) = start.door;
         astar(
             &(x2, y2),
             |&p| self.successors(p),
             |&p| {
                 let (x, y) = p;
-                ((((x - end.x + end.width).abs() + (y - end.y + end.height).abs()) * 10) as f64)
+                f64::from(((x - end.x + end.width).abs() + (y - end.y + end.height).abs()) * 10)
                     .sqrt() as i32
             },
             |&p| matches!(self.is_something.get(&p), Some(CellType::Road)) || end.contains(p),

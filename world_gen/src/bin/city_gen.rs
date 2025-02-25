@@ -7,23 +7,30 @@ use world_gen::{city_generation::CityGenerator, image_utils::draw_rect};
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
+    /// Number of buildings
     #[arg(short, long)]
     buildings: usize,
+    /// Number of important buildings
     #[arg(short, long)]
-    seed_buildings: usize,
+    important_buildings: usize,
+    /// Maximum distance between important buildings
     #[arg(short, long)]
-    important_buildings_max_distance: i32,
+    max_distance_seeds: i32,
+    /// Scale of the important buildings
+    #[arg(short, long)]
+    scale_seeds: i32,
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn city_generator(cli: &Cli) -> ImageResult<()> {
     let buildings = cli.buildings;
-    let important_buildings = cli.seed_buildings;
-    let important_buildings_max_distance = cli.important_buildings_max_distance;
+    let important_buildings = cli.important_buildings;
+    let important_buildings_max_distance = cli.max_distance_seeds;
+    let important_buildings_scale = cli.scale_seeds;
 
     let mut city_gen = CityGenerator::new(8..30, 8..30, 20..100, important_buildings_max_distance);
 
-    city_gen.generate(buildings, important_buildings);
+    city_gen.generate(buildings, important_buildings, important_buildings_scale);
 
     // city_gen.generate_roads_astar();
     let mut img = ImageBuffer::new(
