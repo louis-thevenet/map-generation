@@ -5,6 +5,8 @@ use rand::{thread_rng, RngCore};
 
 mod biome;
 pub mod cell;
+pub mod city_generation;
+pub mod image_utils;
 mod perlin_noise;
 mod vector;
 /// So that 1.0 is a good scale

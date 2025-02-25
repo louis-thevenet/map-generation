@@ -1,28 +1,19 @@
-use std::{env, io};
-
-use image::{ImageBuffer, Rgb};
+use clap::Parser;
+use image::{ImageBuffer, ImageResult, Rgb};
 use progressing::{mapping, Baring};
-use world_gen::{cell::Cell, WorldGen};
+use world_gen::{cell::Cell, image_utils::draw_rect, WorldGen};
 
-pub fn draw_rect(
-    img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>,
-    pos: (u32, u32),
-    width: u32,
-    height: u32,
-    color: Rgb<u8>,
-) {
-    for x in 0..=width {
-        *img.get_pixel_mut(pos.0 + x, pos.1) = color;
-        *img.get_pixel_mut(pos.0 + x, pos.1 + height) = color;
-    }
-    for y in 0..=height {
-        *img.get_pixel_mut(pos.0, pos.1 + y) = color;
-        *img.get_pixel_mut(pos.0 + width, pos.1 + y) = color;
-    }
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    #[arg(short, long)]
+    width: i64,
+    #[arg(short, long)]
+    scale: f64,
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn save_maps(size: (u32, u32), cells: &[Vec<Cell>]) {
+fn save_intermediate_maps(size: (u32, u32), cells: &[Vec<Cell>]) {
     let mut temp_img = ImageBuffer::new(size.0, size.1);
     let mut moisture_img = ImageBuffer::new(size.0, size.1);
     let mut continentalness_img = ImageBuffer::new(size.0, size.1);
@@ -75,22 +66,10 @@ fn save_biome_map(biome_img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, cells: &[Vec<Ce
         }
     }
 }
-
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    std::fs::DirBuilder::new().create("./output")?;
-    let width: i64 = if args.len() > 1 {
-        args[1].parse().unwrap()
-    } else {
-        1024
-    };
-    let scale: f64 = if args.len() > 2 {
-        args[2].parse().unwrap()
-    } else {
-        1.0
-    };
-
+fn biome_generator(cli: &Cli) -> ImageResult<()> {
+    let width = cli.width;
+    let scale = cli.scale;
     let height = width;
     let mut progress_bar = mapping::Bar::with_range(0, height * width).timed();
     progress_bar.set_len(20);
@@ -108,7 +87,7 @@ fn main() -> io::Result<()> {
         .collect::<Vec<_>>();
 
     // Noise maps
-    save_maps((width as u32, height as u32), &cells);
+    save_intermediate_maps((width as u32, height as u32), &cells);
 
     // Biome map
     let mut biome_img = ImageBuffer::new(width as u32, height as u32);
@@ -120,6 +99,12 @@ fn main() -> io::Result<()> {
         1,
         Rgb([255, 0, 0]),
     );
-    biome_img.save("output/biome_map.png").unwrap();
-    Ok(())
+    biome_img.save("output/biome_map.png")
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn main() -> ImageResult<()> {
+    let cli = Cli::parse();
+    std::fs::create_dir("output").unwrap_or_default();
+    biome_generator(&cli)
 }

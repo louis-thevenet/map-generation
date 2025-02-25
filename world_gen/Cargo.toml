@@ -1,9 +1,15 @@
 [[bin]]
-name = "world_gen"
-path = "src/bin.rs"
+name = "city_gen"
+path = "src/bin/city_gen.rs"
+
+[[bin]]
+name = "biome_gen"
+path = "src/bin/biome_gen.rs"
 
 [dependencies]
+clap = { version = "4.5.29", features = ["derive"] }
 image = "0.25.5"
+pathfinding = "4.14.0"
 progressing = "3.0.2"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
