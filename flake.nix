@@ -34,6 +34,7 @@
               cargo-insta
               cargo-machete
               cargo-edit
+              cargo-flamegraph
             ];
           };
 
@@ -75,6 +76,7 @@
               rust-toolchain
               pkgs.clippy
               pkgs.hyperfine
+              pkgs.flamelens
             ];
           };
           pre-commit = {

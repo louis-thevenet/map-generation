@@ -3,3 +3,6 @@
 /.data
 .pre-commit-config.yaml
 /output/
+perf.data.*
+perf.data
+flamegraph.svg
