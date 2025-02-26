@@ -32,7 +32,11 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 
     Paragraph::new(vec![
         format!("Seed: {}", app.map.seed()).into(),
-        format!("Current biome: {:?}", app.map.get_cell(position).biome).into(),
+        format!(
+            "Current biome: {:?}",
+            app.map.get_concrete_cell(position).biome
+        )
+        .into(),
         format!("Position: {}, {}", position.0, position.1,).into(),
         format!("Chunk position: {}, {}", chunk_position.0, chunk_position.1,).into(),
         format!("Scale: {:?}", app.map_mode).into(),
@@ -61,7 +65,7 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
                     let x_map = (app.position.0 / s) as isize + x / 2 - quarter_width;
                     let y_map = (app.position.1 / s) as isize - y + half_height;
 
-                    let cell = app.map.get_chunk(s, (x_map, y_map)).clone();
+                    let cell = app.map.get_intermediate_cell((x_map, y_map), s).clone();
                     let color = cell.biome.color();
                     let mut style =
                         Style::new().bg(ratatui::style::Color::Rgb(color[0], color[1], color[2]));
@@ -69,9 +73,9 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
                         == ((app.position.0 / s) as isize, (app.position.1 / s) as isize)
                     {
                         style = style.fg(ratatui::style::Color::Red);
-                        "@"
+                        "@".to_string()
                     } else {
-                        " "
+                        " ".to_string()
                     };
                     (style, symbol)
                 }
@@ -79,7 +83,7 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
                     let x_map = (app.position.0) as isize + x / 2 - quarter_width;
                     let y_map = (app.position.1) as isize - y + half_height;
 
-                    let cell = app.map.get_cell((x_map, y_map)).clone();
+                    let cell = app.map.get_concrete_cell((x_map, y_map)).clone();
                     let color = cell.biome.color();
                     let mut style =
                         Style::new().bg(ratatui::style::Color::Rgb(color[0], color[1], color[2]));
@@ -87,9 +91,13 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
                         == ((app.position.0) as isize, (app.position.1) as isize)
                     {
                         style = style.fg(ratatui::style::Color::Red);
-                        "@"
+                        "@".to_string()
                     } else {
-                        " "
+                        match cell.building_part {
+                            Some(part) => part.to_string(),
+
+                            None => " ".to_string(),
+                        }
                     };
                     (style, symbol)
                 }
@@ -97,7 +105,7 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
 
             let cell = buf.cell_mut(Position::new(x as u16 + area.x, y as u16 + area.y));
             if let Some(c) = cell {
-                c.set_symbol(symbol);
+                c.set_symbol(&symbol);
                 c.set_style(style);
             }
             let cell = buf.cell_mut(Position::new(
@@ -105,7 +113,7 @@ fn draw_map(app: &mut App, buf: &mut Buffer, area: Rect) {
                 y.try_into().unwrap_or_default(),
             ));
             if let Some(c) = cell {
-                c.set_symbol(symbol);
+                c.set_symbol(&symbol);
                 c.set_style(style);
             }
         }

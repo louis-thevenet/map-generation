@@ -15,10 +15,10 @@ struct Cli {
     important_buildings: usize,
     /// Maximum distance between important buildings
     #[arg(short, long)]
-    max_distance_seeds: i32,
+    max_distance_seeds: isize,
     /// Scale of the important buildings
     #[arg(short, long)]
-    scale_seeds: i32,
+    scale_seeds: isize,
     /// Seed
     #[arg(long)]
     seed: u64,

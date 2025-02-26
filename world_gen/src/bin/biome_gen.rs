@@ -1,7 +1,7 @@
 use clap::Parser;
 use image::{ImageBuffer, ImageResult, Rgb};
 use progressing::{mapping, Baring};
-use world_gen::{cell::Cell, image_utils::draw_rect, WorldGen};
+use world_gen::{image_utils::draw_rect, intermediate_cell::IntermediateCell, WorldGen};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -13,7 +13,7 @@ struct Cli {
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn save_intermediate_maps(size: (u32, u32), cells: &[Vec<Cell>]) {
+fn save_intermediate_maps(size: (u32, u32), cells: &[Vec<IntermediateCell>]) {
     let mut temp_img = ImageBuffer::new(size.0, size.1);
     let mut moisture_img = ImageBuffer::new(size.0, size.1);
     let mut continentalness_img = ImageBuffer::new(size.0, size.1);
@@ -58,7 +58,7 @@ fn save_intermediate_maps(size: (u32, u32), cells: &[Vec<Cell>]) {
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn save_biome_map(biome_img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, cells: &[Vec<Cell>]) {
+fn save_biome_map(biome_img: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, cells: &[Vec<IntermediateCell>]) {
     for (x, cell_row) in cells.iter().enumerate() {
         for (y, cell) in cell_row.iter().rev().enumerate() {
             let color = Rgb(cell.biome.color());
@@ -81,7 +81,12 @@ fn biome_generator(cli: &Cli) -> ImageResult<()> {
 
             print!("\r{progress_bar}");
             (-height / 2..height / 2)
-                .map(|y| world_gen.generate_cell((x.try_into().unwrap(), y.try_into().unwrap())))
+                .map(|y| {
+                    world_gen.generate_intermediate_cell(
+                        (x.try_into().unwrap(), y.try_into().unwrap()),
+                        scale,
+                    )
+                })
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();

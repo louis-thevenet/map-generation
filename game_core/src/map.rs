@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
-use world_gen::{cell::Cell, WorldGen};
-pub const CHUNK_SIZE: f64 = 16.;
+use world_gen::{concrete_cell::ConcreteCell, intermediate_cell::IntermediateCell, WorldGen};
+pub const CHUNK_SIZE: f64 = 256.;
 
 #[derive(Debug)]
 pub struct Map {
     /// The world generator.
     generator: WorldGen,
     /// The generated cells.
-    cells: HashMap<(isize, isize), Cell>,
+    cells: HashMap<(isize, isize), ConcreteCell>,
 }
 
 impl Map {
@@ -41,24 +41,27 @@ impl Map {
         (x, y)
     }
 
-    /// Get a reference to a `Cell` from its coordinates.
-    /// If the cell is not generated, it will be generated and cached.
-    ///
+    /// Get the concrete cell at the given position. If the cell has not been generated yet, it will be generated.
+    /// The cell will be cached for future use.
     /// # Panics
-    ///
-    /// Shouldn't panic but clippy is screaming at me.
-    pub fn get_cell(&mut self, pos: (isize, isize)) -> &Cell {
+    /// Should not panic.
+    pub fn get_concrete_cell(&mut self, pos: (isize, isize)) -> &ConcreteCell {
+        let chunk_pos = self.chunk_coords_from_world_coords((pos.0 as f64, pos.1 as f64));
         if let std::collections::hash_map::Entry::Vacant(e) = self.cells.entry(pos) {
-            e.insert(self.generator.generate_cell(pos));
-            self.get_cell(pos)
+            e.insert(
+                self.generator
+                    .generate_concrete_cell(pos, (chunk_pos.0 as isize, chunk_pos.1 as isize)),
+            );
+            self.get_concrete_cell(pos)
         } else {
-            self.cells.get(&pos).unwrap()
+            self.cells.get(&pos).expect("Shouldn't happen")
         }
     }
-    /// Same as `get_cell` but taskes a scale parameter to control the level of detail.
-    /// Will not cache the result.
-    pub fn get_chunk(&mut self, scale: f64, pos: (isize, isize)) -> Cell {
-        self.generator.generate_chunk(scale, pos)
+
+    /// Get the intermediate cell at the given position. The cell will not be cached.
+    #[must_use]
+    pub fn get_intermediate_cell(&self, pos: (isize, isize), scale: f64) -> IntermediateCell {
+        self.generator.generate_intermediate_cell(pos, scale)
     }
 
     /// Check if a cell has already been generated.
