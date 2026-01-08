@@ -1,4 +1,4 @@
 [workspace]
-members = ["world_viewer", "game_core", "llm_backend", "world_gen"]
+members = ["world_viewer", "game_core", "world_gen"]
 
 resolver = "2"
