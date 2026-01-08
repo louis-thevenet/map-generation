@@ -3,7 +3,7 @@ crossterm = { version = "0.28.1", features = ["event-stream"] }
 futures = "0.3.31"
 ratatui = "0.29.0"
 tokio = { version = "1.40.0", features = ["full"] }
-game_core = { path = "../game_core" }
+world_gen = { path = "../world_gen" }
 tracing = "0.1.41"
 lazy_static = "1.5.0"
 color-eyre = "0.6.3"

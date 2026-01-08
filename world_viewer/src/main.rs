@@ -14,6 +14,7 @@ pub mod event;
 pub mod fps_counter;
 pub mod handler;
 pub mod logging;
+pub mod map;
 pub mod tile_to_ascii;
 pub mod tui;
 pub mod ui;

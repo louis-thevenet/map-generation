@@ -1,6 +1,6 @@
 use crate::app::{App, AppResult};
+use crate::map::CHUNK_SIZE;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use game_core::map::CHUNK_SIZE;
 const CTRL_SPEED_MODIFIER: f64 = 10.;
 const SHIFT_SPEED_MODIFIER: f64 = 50.;
 /// Handles the key events and updates the state of [`App`].

@@ -1,6 +1,6 @@
 use std::error;
 
-use game_core::map::Map;
+use crate::map::Map;
 
 use crate::fps_counter::FpsCounter;
 

@@ -664,19 +664,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "game_core"
-version = "0.1.0"
-dependencies = [
- "rand",
- "rand_chacha",
- "rayon",
- "strum",
- "strum_macros",
- "tracing",
- "world_gen",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2222,7 +2209,6 @@ dependencies = [
  "crossterm",
  "directories",
  "futures",
- "game_core",
  "lazy_static",
  "rand",
  "ratatui",
@@ -2230,6 +2216,7 @@ dependencies = [
  "tracing",
  "tracing-error",
  "tracing-subscriber",
+ "world_gen",
 ]
 
 [[package]]
