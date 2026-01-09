@@ -110,4 +110,20 @@ impl WorldGen {
             biome: BiomeSettings::new(temp, moisture, continentalness, erosion).into(),
         }
     }
+
+    pub fn generate_chunk(&self, position: [i32; 2], size: [u32; 2]) -> Vec<Vec<Cell>> {
+        let mut chunk = Vec::with_capacity(size[1] as usize);
+        for y in 0..size[1] {
+            let mut row = Vec::with_capacity(size[0] as usize);
+            for x in 0..size[0] {
+                let cell = self.generate_cell((
+                    position[0] as isize + x as isize,
+                    position[1] as isize + y as isize,
+                ));
+                row.push(cell);
+            }
+            chunk.push(row);
+        }
+        chunk
+    }
 }

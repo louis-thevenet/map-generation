@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.15.3", features = ["dynamic_linking"] }
+colorgrad = "0.8.0"
 # Less engine logs
 log = { version = "*", features = [
   "max_level_debug",
