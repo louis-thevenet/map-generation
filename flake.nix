@@ -60,19 +60,7 @@
           ];
 
         in
-        rec {
-          # Rust package
-          packages.world-viewer =
-            let
-              cargoToml = builtins.fromTOML (builtins.readFile ./world_viewer/Cargo.toml);
-            in
-            pkgs.rustPlatform.buildRustPackage rec {
-              inherit (cargoToml.package) name version;
-              src = ./.;
-              cargoLock.lockFile = ./Cargo.lock;
-              cargoBuildFlags = "-p " + name;
-            };
-          packages.default = packages.world-viewer;
+        {
           packages.world-gen =
             let
               cargoToml = builtins.fromTOML (builtins.readFile ./world_gen/Cargo.toml);
@@ -83,9 +71,9 @@
               cargoLock.lockFile = ./Cargo.lock;
               cargoBuildFlags = "-p " + name;
             };
-          packages.world_viewer_3d =
+          packages.world_viewer =
             let
-              cargoToml = builtins.fromTOML (builtins.readFile ./world_viewer_3d/Cargo.toml);
+              cargoToml = builtins.fromTOML (builtins.readFile ./world_viewer/Cargo.toml);
             in
             pkgs.rustPlatform.buildRustPackage rec {
               inherit (cargoToml.package) name version;
