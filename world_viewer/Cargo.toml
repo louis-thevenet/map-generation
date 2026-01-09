@@ -10,3 +10,5 @@ log = { version = "*", features = [
   "max_level_debug",
   "release_max_level_warn",
 ] }
+rayon = "1.11.0"
+world_gen = { path = "../world_gen" }

@@ -132,11 +132,6 @@
                     inherit (pkgs) cargo;
                     inherit (pkgs) clippy;
                   };
-                  settings = {
-                    denyWarnings = true;
-                    allFeatures = true;
-                    offline = false;
-                  };
                 };
               };
             };
