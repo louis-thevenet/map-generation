@@ -58,7 +58,7 @@ impl Map {
     /// Same as `get_cell` but taskes a scale parameter to control the level of detail.
     /// Will not cache the result.
     pub fn get_chunk(&mut self, scale: f64, pos: (isize, isize)) -> Cell {
-        self.generator.generate_chunk(scale, pos)
+        self.generator.generate_cell_scaled(scale, pos)
     }
 
     /// Check if a cell has already been generated.

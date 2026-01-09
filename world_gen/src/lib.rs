@@ -25,6 +25,11 @@ pub struct WorldGen {
     erosion_scale: f64,
 }
 
+impl Default for WorldGen {
+    fn default() -> Self {
+        Self::new(1.0, None)
+    }
+}
 impl WorldGen {
     #[must_use]
     pub fn new(global_scale: f64, seed_opt: Option<u64>) -> Self {
@@ -86,7 +91,8 @@ impl WorldGen {
     }
     #[must_use]
     #[allow(clippy::cast_precision_loss)]
-    pub fn generate_chunk(&self, scale: f64, pos: (isize, isize)) -> Cell {
+    /// Generate a cell with a specific scale (for zooming in/out)
+    pub fn generate_cell_scaled(&self, scale: f64, pos: (isize, isize)) -> Cell {
         let pos = (pos.0 as f64, pos.1 as f64);
 
         let temp = self.temperature_noise.noise(pos, self.temp_scale / scale);

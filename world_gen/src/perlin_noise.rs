@@ -53,22 +53,21 @@ impl PerlinNoiseGenerator {
         }
     }
     #[must_use]
-    pub fn lerp(t: f64, a1: f64, a2: f64) -> f64 {
+    fn lerp(t: f64, a1: f64, a2: f64) -> f64 {
         t.mul_add(a2 - a1, a1)
     }
 
     fn fade(t: f64) -> f64 {
         6.0f64.mul_add(t, -15.).mul_add(t, 10.) * t * t * t
     }
-    #[allow(
-        clippy::cast_sign_loss,
-        clippy::cast_possible_truncation,
-        clippy::cast_precision_loss,
-        clippy::similar_names
-    )]
+    #[allow(clippy::similar_names)]
     fn perlin(&self, pos: (f64, f64)) -> f64 {
         let (x, y) = (pos.0 + POS_OFFSET, pos.1 + POS_OFFSET);
-        let (nx, ny) = ((x.floor()) as usize, (y.floor()) as usize);
+        #[allow(clippy::cast_possible_truncation)]
+        let (nx, ny) = (
+            ((x.floor()) as isize).unsigned_abs(),
+            ((y.floor()) as isize).unsigned_abs(),
+        );
         let (fx, fy) = (x - x.floor(), y - y.floor());
 
         let tr = Vector2(fx - 1.0, fy - 1.0);
