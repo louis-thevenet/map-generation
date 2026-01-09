@@ -81,6 +81,19 @@
               src = ./.;
               cargoLock.lockFile = ./Cargo.lock;
               cargoBuildFlags = "-p " + name;
+
+              LD_LIBRARY_PATH = lib.makeLibraryPath (
+                with pkgs;
+                [
+                  vulkan-loader
+                  xorg.libX11
+                  xorg.libXi
+                  xorg.libXcursor
+                  libxkbcommon
+                ]
+              );
+              nativeBuildInputs = [ pkgs.pkg-config ];
+              buildInputs = bevy_deps;
             };
 
           # Rust dev environment

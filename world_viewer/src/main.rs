@@ -18,14 +18,12 @@ fn main() {
         .run();
 }
 fn setup(mut commands: Commands) {
-    // Ambient light for base illumination
     commands.insert_resource(AmbientLight {
         color: Color::srgb(0.7, 0.75, 0.8),
         brightness: 150.0,
         affects_lightmapped_meshes: true,
     });
 
-    // Main directional light (sun) with realistic illuminance
     commands.spawn((
         DirectionalLight {
             shadows_enabled: true,
@@ -36,7 +34,6 @@ fn setup(mut commands: Commands) {
         Transform::from_xyz(50.0, 100.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    // Fill light from opposite direction for softer shadows
     commands.spawn((
         DirectionalLight {
             shadows_enabled: false,
