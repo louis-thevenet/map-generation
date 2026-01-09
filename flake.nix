@@ -17,6 +17,7 @@
         {
           config,
           pkgs,
+          lib,
           ...
         }:
         let
@@ -35,8 +36,28 @@
               cargo-machete
               cargo-edit
               cargo-flamegraph
+              clippy
+              hyperfine
+              flamelens
             ];
           };
+          bevy_deps = with pkgs; [
+            pkg-config
+            # for Linux
+            # Audio (Linux only)
+            alsa-lib
+            # Cross Platform 3D Graphics API
+            vulkan-loader
+            # For debugging around vulkan
+            vulkan-tools
+            # Other dependencies
+            libudev-zero
+            xorg.libX11
+            xorg.libXcursor
+            xorg.libXi
+            xorg.libXrandr
+            libxkbcommon
+          ];
 
         in
         rec {
@@ -61,7 +82,16 @@
               src = ./.;
               cargoLock.lockFile = ./Cargo.lock;
               cargoBuildFlags = "-p " + name;
-
+            };
+          packages.world_viewer_3d =
+            let
+              cargoToml = builtins.fromTOML (builtins.readFile ./world_viewer_3d/Cargo.toml);
+            in
+            pkgs.rustPlatform.buildRustPackage rec {
+              inherit (cargoToml.package) name version;
+              src = ./.;
+              cargoLock.lockFile = ./Cargo.lock;
+              cargoBuildFlags = "-p " + name;
             };
 
           # Rust dev environment
@@ -72,12 +102,17 @@
               ${config.pre-commit.installationScript}
               echo 1>&2 "Welcome to the development shell!"
             '';
+          LD_LIBRARY_PATH = lib.makeLibraryPath (with pkgs;[
+              vulkan-loader
+              xorg.libX11
+              xorg.libXi
+              xorg.libXcursor
+              libxkbcommon
+            ]);
             packages = [
               rust-toolchain
-              pkgs.clippy
-              pkgs.hyperfine
-              pkgs.flamelens
-            ];
+            ]
+            ++ bevy_deps;
           };
           pre-commit = {
             settings = {
