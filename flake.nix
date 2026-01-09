@@ -42,60 +42,59 @@
             ];
           };
           bevy_deps = with pkgs; [
-            pkg-config
-            # for Linux
-            # Audio (Linux only)
             alsa-lib
-            # Cross Platform 3D Graphics API
+            libxkbcommon
+            udev
             vulkan-loader
-            # For debugging around vulkan
-            vulkan-tools
-            # Other dependencies
-            libudev-zero
+            wayland
             xorg.libX11
             xorg.libXcursor
             xorg.libXi
             xorg.libXrandr
-            libxkbcommon
-            wayland
           ];
 
         in
         {
-          packages.world-gen =
-            let
-              cargoToml = builtins.fromTOML (builtins.readFile ./world_gen/Cargo.toml);
-            in
-            pkgs.rustPlatform.buildRustPackage rec {
-              inherit (cargoToml.package) name version;
-              src = ./.;
-              cargoLock.lockFile = ./Cargo.lock;
-              cargoBuildFlags = "-p " + name;
-            };
-          packages.world_viewer =
-            let
-              cargoToml = builtins.fromTOML (builtins.readFile ./world_viewer/Cargo.toml);
-            in
-            pkgs.rustPlatform.buildRustPackage rec {
-              inherit (cargoToml.package) name version;
-              src = ./.;
-              cargoLock.lockFile = ./Cargo.lock;
-              cargoBuildFlags = "-p " + name;
+          packages = {
+            world-gen =
+              let
+                cargoToml = builtins.fromTOML (builtins.readFile ./world_gen/Cargo.toml);
+              in
+              pkgs.rustPlatform.buildRustPackage rec {
+                inherit (cargoToml.package) name version;
+                src = ./.;
+                cargoLock.lockFile = ./Cargo.lock;
+                cargoBuildFlags = "-p " + name;
+              };
+            world_viewer =
+              let
+                cargoToml = builtins.fromTOML (builtins.readFile ./world_viewer/Cargo.toml);
+              in
+              pkgs.rustPlatform.buildRustPackage rec {
+                inherit (cargoToml.package) name version;
+                src = ./.;
+                cargoLock.lockFile = ./Cargo.lock;
+                cargoBuildFlags = "-p " + name;
 
-              LD_LIBRARY_PATH = lib.makeLibraryPath (
-                with pkgs;
-                [
-                  vulkan-loader
-                  xorg.libX11
-                  xorg.libXi
-                  xorg.libXcursor
-                  libxkbcommon
-                ]
-              );
-              nativeBuildInputs = [ pkgs.pkg-config ];
-              buildInputs = bevy_deps;
-            };
+                nativeBuildInputs = with pkgs; [
+                  pkg-config
+                  makeWrapper
+                ];
 
+                buildInputs = bevy_deps;
+
+                prePatch = ''
+                  sed -i 's/features = \["dynamic_linking"\]/features = []/' world_viewer/Cargo.toml
+                '';
+
+                postInstall = ''
+                  wrapProgram $out/bin/${name} \
+                    --prefix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath bevy_deps}
+                '';
+              };
+
+            default = config.packages.world_viewer;
+          };
           # Rust dev environment
           devShells.default = pkgs.mkShell {
             RUST_BACKTRACE = "full";
@@ -116,6 +115,7 @@
             );
             packages = [
               rust-toolchain
+              pkgs.pkg-config
             ]
             ++ bevy_deps;
           };
