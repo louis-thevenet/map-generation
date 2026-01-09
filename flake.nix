@@ -57,6 +57,7 @@
             xorg.libXi
             xorg.libXrandr
             libxkbcommon
+            wayland
           ];
 
         in
@@ -90,13 +91,16 @@
               ${config.pre-commit.installationScript}
               echo 1>&2 "Welcome to the development shell!"
             '';
-          LD_LIBRARY_PATH = lib.makeLibraryPath (with pkgs;[
-              vulkan-loader
-              xorg.libX11
-              xorg.libXi
-              xorg.libXcursor
-              libxkbcommon
-            ]);
+            LD_LIBRARY_PATH = lib.makeLibraryPath (
+              with pkgs;
+              [
+                vulkan-loader
+                xorg.libX11
+                xorg.libXi
+                xorg.libXcursor
+                libxkbcommon
+              ]
+            );
             packages = [
               rust-toolchain
             ]

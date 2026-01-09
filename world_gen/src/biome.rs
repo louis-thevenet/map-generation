@@ -17,18 +17,11 @@ pub enum MoistureLevel {
 }
 
 #[derive(Copy, Clone)]
-pub enum ContinentalnessLevel {
+pub enum HeightLevel {
     DeepWater,
     ShallowWater,
     Beach,
     Land,
-    Farland,
-}
-
-#[derive(Copy, Clone)]
-pub enum ErosionLevel {
-    Flat,
-    SlightHills,
     Hills,
     Mountains,
 }
@@ -37,13 +30,11 @@ pub enum ErosionLevel {
 pub struct BiomeSettings {
     pub temperature: TemperatureLevel,
     pub moisture: MoistureLevel,
-    pub continentalness: ContinentalnessLevel,
-    pub erosion: ErosionLevel,
+    pub height: HeightLevel,
 }
 
 impl BiomeSettings {
-    pub fn new(temp: f64, moisture: f64, continentalness: f64, erosion: f64) -> Self {
-        // -2 is a temp fix because the noise generator can generate values outside [-1,1]
+    pub fn new(temp: f64, moisture: f64, height: f64) -> Self {
         let temperature = match temp {
             -2.0..=-0.6 => TemperatureLevel::Freezing,
             -0.6..=-0.3 => TemperatureLevel::Cold,
@@ -60,26 +51,19 @@ impl BiomeSettings {
             _ => MoistureLevel::Rainforest,
         };
 
-        let continentalness = match continentalness {
-            -2.0..=-0.3 => ContinentalnessLevel::DeepWater,
-            -0.3..=0.0 => ContinentalnessLevel::ShallowWater,
-            0.0..=0.3 => ContinentalnessLevel::Beach,
-            0.3..=0.8 => ContinentalnessLevel::Land,
-            _ => ContinentalnessLevel::Farland,
-        };
-
-        let erosion = match erosion {
-            -2.0..=-0.6 => ErosionLevel::Flat,
-            -0.6..=0.2 => ErosionLevel::SlightHills,
-            -0.2..=0.6 => ErosionLevel::Hills,
-            _ => ErosionLevel::Mountains,
+        let height = match height {
+            h if h < -0.3 => HeightLevel::DeepWater,
+            h if h < -0.05 => HeightLevel::ShallowWater,
+            h if h < 0.05 => HeightLevel::Beach,
+            h if h < 0.4 => HeightLevel::Land,
+            h if h < 0.7 => HeightLevel::Hills,
+            _ => HeightLevel::Mountains,
         };
 
         Self {
             temperature,
             moisture,
-            continentalness,
-            erosion,
+            height,
         }
     }
 }
@@ -87,19 +71,13 @@ impl BiomeSettings {
 enum IntermediateBiomeType {
     // Water biomes
     DeepWater,
-
     ShallowWater,
     // Water-land biomes
     Beach,
-    Cliff,
     // Land biomes
     Plain,
     Hills,
     Mountains,
-
-    // Farland biomes
-    Plateau,
-    HighMountains,
 }
 
 struct IntermediateBiome {
@@ -107,29 +85,16 @@ struct IntermediateBiome {
     temperature: TemperatureLevel,
     moisture: MoistureLevel,
 }
+
 impl From<BiomeSettings> for IntermediateBiomeType {
     fn from(settings: BiomeSettings) -> Self {
-        match settings.continentalness {
-            ContinentalnessLevel::DeepWater => IntermediateBiomeType::DeepWater,
-
-            ContinentalnessLevel::ShallowWater => match settings.erosion {
-                ErosionLevel::Flat | ErosionLevel::SlightHills | ErosionLevel::Hills => {
-                    IntermediateBiomeType::ShallowWater
-                }
-                ErosionLevel::Mountains => IntermediateBiomeType::Cliff,
-            },
-            ContinentalnessLevel::Land => match settings.erosion {
-                ErosionLevel::Flat | ErosionLevel::SlightHills => IntermediateBiomeType::Plain,
-                ErosionLevel::Hills => IntermediateBiomeType::Hills,
-                ErosionLevel::Mountains => IntermediateBiomeType::Mountains,
-            },
-            ContinentalnessLevel::Farland => match settings.erosion {
-                ErosionLevel::Flat | ErosionLevel::SlightHills => IntermediateBiomeType::Plain,
-                ErosionLevel::Hills => IntermediateBiomeType::Plateau,
-
-                ErosionLevel::Mountains => IntermediateBiomeType::HighMountains,
-            },
-            ContinentalnessLevel::Beach => IntermediateBiomeType::Beach,
+        match settings.height {
+            HeightLevel::DeepWater => IntermediateBiomeType::DeepWater,
+            HeightLevel::ShallowWater => IntermediateBiomeType::ShallowWater,
+            HeightLevel::Beach => IntermediateBiomeType::Beach,
+            HeightLevel::Land => IntermediateBiomeType::Plain,
+            HeightLevel::Hills => IntermediateBiomeType::Hills,
+            HeightLevel::Mountains => IntermediateBiomeType::Mountains,
         }
     }
 }
@@ -149,7 +114,6 @@ pub enum BiomeType {
     TropicalBeach,
     TemperateBeach,
     IceField,
-    Cliff,
     // Land biomes
     Plain,
     Savanna,
@@ -164,10 +128,6 @@ pub enum BiomeType {
     Dunes,
     Mountains,
     IceMountains,
-
-    // Farland biomes
-    Plateau,
-    HighMountains,
 }
 impl BiomeType {
     pub fn color(&self) -> [u8; 3] {
@@ -183,7 +143,6 @@ impl BiomeType {
             BiomeType::TropicalBeach => [255, 249, 99],
             BiomeType::TemperateBeach => [237, 234, 147],
             BiomeType::IceField => [221, 246, 255],
-            BiomeType::Cliff => [183, 187, 196],
 
             BiomeType::Plain => [27, 250, 103],
             BiomeType::Savanna => [255, 177, 60],
@@ -198,9 +157,6 @@ impl BiomeType {
             BiomeType::Dunes => [209, 170, 18],
             BiomeType::Mountains => [179, 178, 177],
             BiomeType::IceMountains => [234, 239, 240],
-
-            BiomeType::Plateau => [179, 197, 201],
-            BiomeType::HighMountains => [105, 111, 112],
         }
     }
 }
@@ -226,8 +182,6 @@ impl From<IntermediateBiome> for BiomeType {
                 TemperatureLevel::Cold | TemperatureLevel::Temperate => BiomeType::TemperateBeach,
                 TemperatureLevel::Freezing => BiomeType::IceField,
             },
-            IntermediateBiomeType::Cliff => BiomeType::Cliff,
-
             IntermediateBiomeType::Plain => match value.temperature {
                 TemperatureLevel::Freezing => BiomeType::Taiga,
                 TemperatureLevel::Cold | TemperatureLevel::Temperate => match value.moisture {
@@ -237,7 +191,6 @@ impl From<IntermediateBiome> for BiomeType {
                     MoistureLevel::Wet => BiomeType::Forest,
                     MoistureLevel::Rainforest => BiomeType::Lake,
                 },
-
                 TemperatureLevel::Warm => match value.moisture {
                     MoistureLevel::Arid | MoistureLevel::Dry => BiomeType::Desert,
                     MoistureLevel::Moderate => BiomeType::Savanna,
@@ -263,10 +216,6 @@ impl From<IntermediateBiome> for BiomeType {
                 | TemperatureLevel::Warm
                 | TemperatureLevel::Hot => BiomeType::Mountains,
             },
-
-            IntermediateBiomeType::Plateau => BiomeType::Plateau,
-
-            IntermediateBiomeType::HighMountains => BiomeType::HighMountains,
         }
     }
 }

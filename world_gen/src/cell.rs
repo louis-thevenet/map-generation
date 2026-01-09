@@ -7,4 +7,5 @@ pub struct Cell {
     pub continentalness: f64,
     pub erosion: f64,
     pub biome: BiomeType,
+    pub height: f64,
 }

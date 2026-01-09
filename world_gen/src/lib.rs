@@ -81,12 +81,15 @@ impl WorldGen {
             .noise(pos, self.continentalness_scale);
         let erosion = self.erosion_noise.noise(pos, self.erosion_scale);
 
+        let height = continentalness + erosion * 0.3;
+
         Cell {
             temp,
             moisture,
             continentalness,
             erosion,
-            biome: BiomeSettings::new(temp, moisture, continentalness, erosion).into(),
+            biome: BiomeSettings::new(temp, moisture, height).into(),
+            height,
         }
     }
     #[must_use]
@@ -102,12 +105,15 @@ impl WorldGen {
             .noise(pos, self.continentalness_scale / scale);
         let erosion = self.erosion_noise.noise(pos, self.erosion_scale / scale);
 
+        let height = continentalness + erosion * 0.3;
+
         Cell {
             temp,
             moisture,
             continentalness,
             erosion,
-            biome: BiomeSettings::new(temp, moisture, continentalness, erosion).into(),
+            biome: BiomeSettings::new(temp, moisture, height).into(),
+            height,
         }
     }
 

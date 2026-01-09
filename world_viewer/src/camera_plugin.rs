@@ -24,7 +24,12 @@ fn camera_movement_system(
     time: Res<Time>,
 ) {
     let dt = time.delta_secs();
-    let move_speed = 10.0;
+    let base_speed = 10.0;
+    let move_speed = if input.pressed(KeyCode::ShiftLeft) || input.pressed(KeyCode::ShiftRight) {
+        base_speed * 3.0
+    } else {
+        base_speed
+    };
 
     let mut direction = Vec3::ZERO;
 
@@ -44,17 +49,34 @@ fn camera_movement_system(
         direction += *camera.right();
     }
 
-    if direction != Vec3::ZERO {
-        let direction = direction.normalize();
-        camera.translation += direction * move_speed * dt;
+    // Normalize horizontal movement
+    if direction.xz() != Vec2::ZERO {
+        let horizontal = Vec3::new(direction.x, 0.0, direction.z).normalize();
+        camera.translation += horizontal * move_speed * dt;
+    }
+
+    // Up/Down (Space/Ctrl) - separate from horizontal movement
+    if input.pressed(KeyCode::Space) {
+        camera.translation.y += move_speed * dt;
+    }
+    if input.pressed(KeyCode::ControlLeft) || input.pressed(KeyCode::ControlRight) {
+        camera.translation.y -= move_speed * dt;
     }
 }
 fn rotate_camera_to_mouse(
     time: Res<Time>,
-    mut mouse_motion: EventReader<MouseMotion>,
+    input: Res<ButtonInput<KeyCode>>,
+    mut mouse_motion: MessageReader<MouseMotion>,
     mut transform: Single<&mut Transform, With<MainCamera>>,
 ) {
     const PITCH_LIMIT: f32 = std::f32::consts::FRAC_PI_2 - 0.01;
+
+    // Don't rotate camera if Left Alt is pressed (cursor lock)
+    if input.pressed(KeyCode::AltLeft) {
+        // Clear mouse motion events to prevent accumulation
+        mouse_motion.read().count();
+        return;
+    }
 
     let dt = time.delta_secs();
     // The factors are just arbitrary mouse sensitivity values.

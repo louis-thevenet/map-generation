@@ -1,5 +1,13 @@
+use bevy::asset::RenderAssetUsages;
+use bevy::mesh::Indices;
 use bevy::prelude::*;
+use bevy::render::render_resource::PrimitiveTopology;
+use bevy_water::material::{StandardWaterMaterial, WaterMaterial};
 use world_gen::WorldGen;
+
+const SQUARE_SIZE: u32 = 64;
+const SIZE: [u32; 2] = [8; 2];
+const RESOLUTION: u32 = 16;
 
 #[derive(Component)]
 pub struct Chunk {
@@ -7,7 +15,6 @@ pub struct Chunk {
     /// The size of the terrain.
     size: [u32; 2],
     resolution: u32,
-    wireframe: bool,
 }
 
 impl Default for Chunk {
@@ -16,7 +23,6 @@ impl Default for Chunk {
             position: [0, 0],
             size: [2, 2],
             resolution: 15,
-            wireframe: false,
         }
     }
 }
@@ -39,6 +45,7 @@ impl Plugin for TerrainPlugin {
                 initialize_world_generator,
                 initialize_terrain,
                 generate_terrain,
+                spawn_water,
             )
                 .chain(),
         );
@@ -46,23 +53,29 @@ impl Plugin for TerrainPlugin {
 }
 
 #[derive(Resource)]
-struct WorldGenRes(WorldGen);
+pub struct WorldGenRes(pub WorldGen);
 fn initialize_world_generator(mut commands: Commands) {
     let world_gen = WorldGen::new(1.0, Some(1));
     commands.insert_resource(WorldGenRes(world_gen));
 }
 
 fn initialize_terrain(mut commands: Commands) {
-    // spawn 1 chunk
-    commands.spawn(ChunkBundle {
-        chunk: Chunk {
-            position: [0, 0],
-            size: [16, 16],
-            resolution: 250,
-            wireframe: false,
-        },
-        ..Default::default()
-    });
+    for x in 0..SQUARE_SIZE {
+        for z in 0..SQUARE_SIZE {
+            let position = [
+                (x * SIZE[0]) as i32 - (SQUARE_SIZE as i32 * SIZE[0] as i32) / 2,
+                (z * SIZE[1]) as i32 - (SQUARE_SIZE as i32 * SIZE[1] as i32) / 2,
+            ];
+            commands.spawn(ChunkBundle {
+                chunk: Chunk {
+                    position,
+                    size: SIZE,
+                    resolution: RESOLUTION,
+                },
+                ..default()
+            });
+        }
+    }
 }
 
 fn generate_terrain(
@@ -79,7 +92,12 @@ fn generate_terrain(
             terrain.size[0] * terrain.resolution,
             terrain.size[1] * terrain.resolution,
         ];
-        let cells = world_gen.0.generate_chunk(terrain.position, size);
+        // Convert chunk position to world cell coordinates
+        let world_position = [
+            terrain.position[0] * terrain.resolution as i32,
+            terrain.position[1] * terrain.resolution as i32,
+        ];
+        let cells = world_gen.0.generate_chunk(world_position, size);
 
         // Collect unique biome types to build gradient
         let mut biome_set = std::collections::HashSet::new();
@@ -112,7 +130,7 @@ fn generate_terrain(
             domain.push((i as f32 / (biomes.len() - 1).max(1) as f32) * 100.0);
         }
 
-        let grad = colorgrad::GradientBuilder::new()
+        let _grad = colorgrad::GradientBuilder::new()
             .colors(&colors)
             .domain(&domain)
             .build::<colorgrad::LinearGradient>()
@@ -132,21 +150,23 @@ fn generate_terrain(
         let mut indices: Vec<u32> = Vec::with_capacity(triangle_count);
         let mut vertex_colors: Vec<[f32; 4]> = Vec::with_capacity(vertices_count);
 
-        let rows = size[0];
-        let cols = size[1];
-        let width = terrain.size[0] as f32;
-        let depth = terrain.size[1] as f32;
+        let rows = size[0]; // Need one more vertex than cells
+        let cols = size[1]; // Need one more vertex than cells
 
         for row in 0..rows {
             for col in 0..cols {
-                let cell = &cells[row as usize][col as usize];
+                let cell_y = col as usize;
+                let cell_x = row as usize;
+                let cell = &cells[cell_y][cell_x];
 
-                // Use continentalness for height calculation
-                let height_value = (cell.continentalness as f32 + 1.0) / 2.0; // Normalize from [-1,1] to [0,1]
+                // Use the pre-calculated height from the cell
+                // This height was computed from continentalness and erosion
+                let height_value = cell.height as f32;
 
-                let x = (row as f32 / terrain.resolution as f32 - width / 2.0) + 0.5;
-                let y = ((height_value * 1.2).powf(2.0) - 0.5) * 2.0; // Use fixed exponent
-                let z = (col as f32 / terrain.resolution as f32 - depth / 2.0) + 0.5;
+                // Calculate position: each vertex is at world cell coordinate / resolution
+                let x = terrain.position[0] as f32 + row as f32 / terrain.resolution as f32;
+                let y = height_value * 10.0; // Scale up the height variation
+                let z = terrain.position[1] as f32 + col as f32 / terrain.resolution as f32;
 
                 // Get color from biome
                 let rgb = cell.biome.color();
@@ -182,14 +202,37 @@ fn generate_terrain(
         }
 
         let mut mesh = Mesh::new(
-            bevy::render::mesh::PrimitiveTopology::TriangleList,
-            bevy::render::render_asset::RenderAssetUsages::RENDER_WORLD,
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::RENDER_WORLD,
         );
-        mesh.insert_indices(bevy::render::mesh::Indices::U32(indices.clone()));
+        mesh.insert_indices(Indices::U32(indices.clone()));
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
         mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vertex_colors.clone());
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
         *mesh_handle = Mesh3d(meshes.add(mesh));
     }
+}
+
+fn spawn_water(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut water_materials: ResMut<Assets<StandardWaterMaterial>>,
+) {
+    // one for all chunks
+    let water_mesh = meshes.add(Plane3d::default().mesh().size(
+        (SQUARE_SIZE * SIZE[0]) as f32,
+        (SQUARE_SIZE * SIZE[1]) as f32,
+    ));
+    let water_material = water_materials.add(StandardWaterMaterial {
+        base: default(),
+        extension: WaterMaterial::default(),
+    });
+
+    commands.spawn((
+        Name::new("Water"),
+        Mesh3d(water_mesh),
+        MeshMaterial3d(water_material),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+    ));
 }
