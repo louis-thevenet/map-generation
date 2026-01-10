@@ -8,7 +8,7 @@ use world_gen::WorldGen;
 use crate::camera_plugin::MainCamera;
 
 const SIZE: [u32; 2] = [8; 2];
-const RESOLUTION: u32 = 16;
+const RESOLUTION: u32 = 32;
 const RENDER_DISTANCE: f32 = 16.0; // Radius in chunks
 
 #[derive(Component)]
@@ -25,8 +25,8 @@ impl Default for Chunk {
     fn default() -> Self {
         Self {
             position: [0, 0],
-            size: [2, 2],
-            resolution: 15,
+            size: SIZE,
+            resolution: RESOLUTION,
             generated: false,
         }
     }
