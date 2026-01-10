@@ -1,7 +1,8 @@
-use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, window::WindowMode};
-use bevy_water::{WaterPlugin, WaterSettings};
-
 use crate::{camera_plugin::CameraPlugin, terrain::TerrainPlugin};
+use bevy::window::WindowMode;
+use bevy::{prelude::*, text::FontSmoothing};
+use bevy_dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin, FrameTimeGraphConfig};
+use bevy_water::{WaterPlugin, WaterSettings};
 mod camera_plugin;
 mod terrain;
 fn main() {
@@ -14,7 +15,28 @@ fn main() {
                 }),
                 ..default()
             }),
-            FrameTimeDiagnosticsPlugin::default(),
+            FpsOverlayPlugin {
+                config: FpsOverlayConfig {
+                    text_config: TextFont {
+                        // Here we define size of our overlay
+                        font_size: 42.0,
+                        // If we want, we can use a custom font
+                        font: default(),
+                        // We could also disable font smoothing,
+                        font_smoothing: FontSmoothing::default(),
+                        ..default()
+                    },
+                    enabled: true,
+                    frame_time_graph_config: FrameTimeGraphConfig {
+                        enabled: true,
+                        // The minimum acceptable fps
+                        min_fps: 30.0,
+                        // The target fps
+                        target_fps: 144.0,
+                    },
+                    ..Default::default()
+                },
+            },
         ))
         .insert_resource(WaterSettings {
             spawn_tiles: None,
