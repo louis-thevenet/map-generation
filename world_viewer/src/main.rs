@@ -1,4 +1,4 @@
-use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, window::WindowMode};
 use bevy_water::{WaterPlugin, WaterSettings};
 
 use crate::{camera_plugin::CameraPlugin, terrain::TerrainPlugin};
@@ -6,7 +6,16 @@ mod camera_plugin;
 mod terrain;
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, FrameTimeDiagnosticsPlugin::default()))
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    mode: WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
+                    ..default()
+                }),
+                ..default()
+            }),
+            FrameTimeDiagnosticsPlugin::default(),
+        ))
         .insert_resource(WaterSettings {
             spawn_tiles: None,
             ..default()
